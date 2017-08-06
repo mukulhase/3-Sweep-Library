@@ -9,6 +9,7 @@ class ThreeSweep():
         self.image = None
         self.contourPoints = []
         self.objectPoints = []
+        self.axisResolution = 10
         pass
 
     def loadImage(self, filename):
