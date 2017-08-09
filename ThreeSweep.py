@@ -28,6 +28,25 @@ class ThreeSweep():
         pass
 
     def matlabCode(self):
+        def getaxis(ax_contours):
+            points = ax_contours[0][0]
+            for i in range(1, len(ax_contours)):
+                points = np.vstack((points, ax_contours[i][0]))
+
+            # points = np.fliplr(points)
+            # temp = [tuple(row) for row in points]
+            # unique_points = np.unique(temp)
+            unique_points = points
+
+            h = len(unique_points)
+
+            A = np.zeros((np.max(unique_points[:, 1]) + 1, 1), np.uint8)
+            for i in range(0, h):
+                A[unique_points[i, 1]] = unique_points[i, 0]
+
+            col = np.arange(len(A))
+
+            return np.column_stack((A, col))
 
         def getContours(input):
             im2, contours, hierarchy = cv2.findContours(input, 1, 2)
@@ -72,32 +91,15 @@ class ThreeSweep():
         ax_close = cv2.morphologyEx(cv2.cvtColor(obj_axis, cv2.COLOR_BGR2GRAY), cv2.MORPH_CLOSE, kernel)
         ax_approx, ax_contours = getContours(ax_close)
 
-        print ax_contours
-        # ax_contours = np.unique(np.fliplr(ax_contours), axis=0)
-
-        # h = len(ax_contours)
-        # print h, w
-        # A = np.zeros((h,1), np.uint8)
-        # for i in range(0,h):
-        #     A[i] = ax_contours[i,1]
-        #
-        # points = np.array([[A[h-1], h-1]])
-        # for i in range(0, h):
-        #     i = h-1-i
-        #     points = np.vstack((points, [A[i], i]))
-        # print points
-
-        # A(M(:, 2)) = M(:, 1);
-        # points = [A;1:size(A, 2)]';
-        # points = points(end:-1:1,:);
+        ax_points = getaxis(ax_contours) # till line 26 in fakecombine.m
 
         border_close = cv2.morphologyEx(cv2.cvtColor(obj_border, cv2.COLOR_BGR2GRAY), cv2.MORPH_CLOSE, kernel)
         border_fill = imfill(border_close)
 
         bord_approx, bord_contours = getContours(border_fill)
 
-        # cv2.drawContours(obj_contour, contours, -1, (0, 255, 0), 3)
-        # cv2.imshow('img', obj_contour)
+        # cv2.drawContours(obj_axis, ax_points, -1, (0, 255, 0), 3)
+        # cv2.imshow('img', obj_axis)
         # cv2.waitKey(0)
 
     def setMajor(self):
