@@ -79,6 +79,31 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         # OpenGL state
         glClearColor(0.0, 0.0, 0.0, 0.0)
         glEnable(GL_DEPTH_TEST)
+
+        # Enable the GL features we will be using
+        glEnable(GL_LIGHTING)
+        glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_TEXTURE_2D)
+        glEnable(GL_CULL_FACE)
+
+        glShadeModel(GL_SMOOTH)
+        glClearColor(1.0, 1.0, 1.0, 0.0) # white
+
+        # Set the material
+        glMaterial(GL_FRONT, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
+        glMaterial(GL_FRONT, GL_DIFFUSE, (0.2, 0.2, 0.2, 1.0))
+        glMaterial(GL_FRONT, GL_SPECULAR, (1.0, 1.0, 1.0, 1.0))
+        glMaterial(GL_FRONT, GL_SHININESS, 10.0)
+
+        # Set light parameters
+        glLight(GL_LIGHT0, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
+        glLight(GL_LIGHT0, GL_DIFFUSE, (0.4, 0.4, 0.4, 1.0))
+        glLight(GL_LIGHT0, GL_SPECULAR, (1.0, 1.0, 1.0, 1.0))
+
+        # Enable light 1 and set position
+        glEnable(GL_LIGHT0)
+        glLight(GL_LIGHT0, GL_POSITION,  (0, .5, 1, 0))
+
         self.reset_view()
 
     def resizeGL(self, width, height):
