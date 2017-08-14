@@ -14,9 +14,13 @@ class ThreeSweep():
         self.primitiveDensity = 40
         pass
 
-    def loadImage(self, filename):
+    def loadImage(self, image):
         ''' Load image into module for processing '''
-        self.image = cv2.imread(filename)
+        self.filename = image
+        if type(image) is str:
+            self.image = cv2.imread(image,0)
+        else:
+            self.image = image
         pass
 
     def showImage(self):
@@ -27,6 +31,8 @@ class ThreeSweep():
 
     def getEdges(self):
         ''' Run edge detection on the image '''
+        self.gradient = cv2.Canny(self.image)
+        cv2.imshow('edges',self.gradient)
         pass
 
     def matlabCode(self):
@@ -104,8 +110,14 @@ class ThreeSweep():
         # cv2.imshow('img', obj_axis)
         # cv2.waitKey(0)
 
-    def setMajor(self):
+    def setMajor(self, point1, point2):
         ''' Set points for Major Axis '''
+        self.leftMajor = point1
+        self.rightMajor = point2
+        pass
+
+    def setMinor(self, point):
+        self.minor = point
         pass
 
     def addSweepPoint(self):

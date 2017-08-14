@@ -36,6 +36,8 @@ Pillow==4.2.1
 prompt-toolkit==1.0.15
 ptyprocess==0.5.2
 Pygments==2.2.0
+PyOpenGL==3.1.0
+PyOpenGL-accelerate==3.1.0
 pyparsing==2.2.0
 python-dateutil==2.6.1
 pytz==2017.2

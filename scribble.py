@@ -1,5 +1,5 @@
  #!/usr/bin/env python
-
+# structured edges, iopl edge detection
 
 #############################################################################
 ##
@@ -42,11 +42,12 @@
 #############################################################################
 
 
-# These are only needed for Python v2 but are harmless for Python v3.
+# These are only needed for Python v2 but are harmless for Python v3
 import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
-import copy
+from ThreeSweep import ThreeSweep
+threesweep = ThreeSweep()
 
 from PyQt4 import QtCore, QtGui
 
@@ -75,6 +76,17 @@ class ScribbleArea(QtGui.QWidget):
         else:
             self.state = state
         state = (self.state)
+        if state=='Start':
+            pass
+        elif self.state == 'FirstSweep':
+            self.setPenColor(QtCore.Qt.blue)
+            pass
+        elif self.state == 'SecondSweep':
+            self.setPenColor(QtCore.Qt.red)
+            pass
+        elif self.state == 'ThirdSweep':
+            self.setPenColor(QtCore.Qt.green)
+            pass
         self.plotPoint(self.firstPoint)
         self.plotPoint(self.secondPoint)
         self.plotPoint(self.thirdPoint)
@@ -136,6 +148,15 @@ class ScribbleArea(QtGui.QWidget):
         if self.state == 'FirstSweep':
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
 
+        if self.state == 'SecondSweep':
+            self.drawLineWithColor(self.secondPoint , event.pos(), temp=True)
+            distance = (self.firstPoint-self.secondPoint)
+            center = (self.firstPoint+self.secondPoint)/2
+            minor = (center - event.pos()).y()
+            distance = (distance.x())**2 + (distance.y())**2
+            distance = distance**0.5
+            self.imagePainter.drawEllipse(center,distance/2, minor)
+
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
             self.drawLineTo(event.pos())
@@ -156,14 +177,10 @@ class ScribbleArea(QtGui.QWidget):
         self.clicked = False
 
     def saveDrawing(self):
-        pass
-        ##self.oldimage = QtGui.QImage(self.image)
+        self.oldimage = QtGui.QImage(self.image)
 
     def restoreDrawing(self):
-        pass
-        ##self.imagePainter.end()
-        ##self.imagePainter= QtGui.QPainter(self.oldimage)
-
+        self.imagePainter.drawImage(QtCore.QPoint(0, 0), self.oldimage)
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -192,32 +209,28 @@ class ScribbleArea(QtGui.QWidget):
             if temp:
                 self.tempDrawing = True
 
+    def afterDraw(self, temp):
+        if not temp:
+            self.saveDrawing()
+        else:
+            pass
+
     def plotPoint(self, point, temp = False):
         self.beforeDraw(temp)
         if not point:
             return
-
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, 10,
                                   QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawPoint(point)
-        if not temp:
-            print 'saved'
-            self.saveDrawing()
-        else:
-            pass
+        self.afterDraw(temp)
         self.update()
 
     def drawLineWithColor(self, startPoint, endPoint, temp=False):
-        if temp:
-            return
         self.beforeDraw(temp)
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth,
                                   QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawLine(startPoint, endPoint)
-        if not temp:
-            self.saveDrawing()
-        else:
-            pass
+        self.afterDraw(temp)
         self.modified = True
 
         rad = self.myPenWidth / 2 + 2
@@ -286,6 +299,8 @@ class MainWindow(QtGui.QMainWindow):
                     QtCore.QDir.currentPath())
             if fileName:
                 self.scribbleArea.openImage(fileName)
+                threesweep.loadImage(fileName)
+                threesweep.getEdges()
 
     def save(self):
         action = self.sender()
