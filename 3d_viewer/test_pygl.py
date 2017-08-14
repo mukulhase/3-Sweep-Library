@@ -37,20 +37,28 @@ import sys
 from PyQt4 import QtGui
 from PyGLWidget import PyGLWidget
 from OpenGL.GL import *
+from OpenGL.GLU import *
+
+# Import the Model3D class
+import model3d
 
 #===============================================================================
 
 class testGLWidget(PyGLWidget):
     def paintGL(self):
         PyGLWidget.paintGL(self)
-        glBegin(GL_TRIANGLES)
-        glColor3f(1,0,0)
-        glVertex3f(0,0,0)
-        glColor3f(0,1,0)
-        glVertex3f(0,1,0)
-        glColor3f(0,0,1)
-        glVertex3f(1,1,0)
-        glEnd()
+        # glBegin(GL_TRIANGLES)
+        # glColor3f(1,0,0)
+        # glVertex3f(0,0,0)
+        # glColor3f(0,1,0)
+        # glVertex3f(0,1,0)
+        # glColor3f(0,0,1)
+        # glVertex3f(1,1,0)
+        # glEnd()
+        # Read the model
+        tank_model = model3d.Model3D()
+        tank_model.read_obj('mytank.obj')
+        tank_model.draw_quick()
 
 #===============================================================================
 # Main
