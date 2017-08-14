@@ -46,29 +46,48 @@
 import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
+import copy
 
 from PyQt4 import QtCore, QtGui
-
 
 class ScribbleArea(QtGui.QWidget):
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
-
+        self.tempDrawing = False
+        self.setMouseTracking(True)
+        self.firstPoint = None
+        self.secondPoint = None
+        self.thirdPoint = None
+        self.contourPoints = []
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.modified = False
-        self.scribbling = False
-        self.myPenWidth = 1
+        self.clicked = False
+        self.state = 'Start'
+        self.myPenWidth = 5
         self.myPenColor = QtCore.Qt.blue
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
+        self.imagePainter = None
+
+    def stateUpdate(self, state=None):
+        if state == None:
+            pass
+        else:
+            self.state = state
+        state = (self.state)
+        self.plotPoint(self.firstPoint)
+        self.plotPoint(self.secondPoint)
+        self.plotPoint(self.thirdPoint)
 
     def openImage(self, fileName):
         loadedImage = QtGui.QImage()
         if not loadedImage.load(fileName):
             return False
 
-        newSize = loadedImage.size().expandedTo(self.size())
-        self.resizeImage(loadedImage, newSize)
+        newSize = loadedImage.size()
+        self.resize(newSize)
+        ##newSize = loadedImage.size().expandedTo(self.size())
+        ##self.resizeImage(loadedImage, newSize)
         self.image = loadedImage
         self.modified = False
         self.update()
@@ -97,17 +116,54 @@ class ScribbleArea(QtGui.QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
+            if self.state == 'Start':
+                pass
+            elif self.state == 'FirstSweep':
+                pass
+            elif self.state == 'SecondSweep':
+                self.stateUpdate('ThirdSweep')
+                self.thirdPoint = event.pos()
+                pass
+            elif self.state == 'ThirdSweep':
+                pass
             self.lastPoint = event.pos()
-            self.scribbling = True
+            self.clicked = True
 
     def mouseMoveEvent(self, event):
-        if (event.buttons() & QtCore.Qt.LeftButton) and self.scribbling:
+        if (event.buttons() & QtCore.Qt.LeftButton) and self.state == 'ThirdSweep' and self.clicked:
             self.drawLineTo(event.pos())
 
+        if self.state == 'FirstSweep':
+            self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
+
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton and self.scribbling:
+        if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
             self.drawLineTo(event.pos())
-            self.scribbling = False
+        if self.state == 'Start':
+            self.firstPoint = event.pos()
+            self.stateUpdate('FirstSweep')
+        elif self.state == 'FirstSweep':
+            self.secondPoint = event.pos()
+            self.stateUpdate('SecondSweep')
+        elif self.state == 'SecondSweep':
+            pass
+        elif self.state == 'ThirdSweep':
+            self.stateUpdate('Complete')
+        elif self.state == 'Complete':
+            self.restoreDrawing()
+            self.update()
+
+        self.clicked = False
+
+    def saveDrawing(self):
+        pass
+        ##self.oldimage = QtGui.QImage(self.image)
+
+    def restoreDrawing(self):
+        pass
+        ##self.imagePainter.end()
+        ##self.imagePainter= QtGui.QPainter(self.oldimage)
+
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -115,23 +171,62 @@ class ScribbleArea(QtGui.QWidget):
 
     def resizeEvent(self, event):
         if self.width() > self.image.width() or self.height() > self.image.height():
-            newWidth = max(self.width() + 128, self.image.width())
-            newHeight = max(self.height() + 128, self.image.height())
+            newWidth = max(self.width(), self.image.width())
+            newHeight = max(self.height(), self.image.height())
             self.resizeImage(self.image, QtCore.QSize(newWidth, newHeight))
             self.update()
 
         super(ScribbleArea, self).resizeEvent(event)
 
-    def drawLineTo(self, endPoint):
-        painter = QtGui.QPainter(self.image)
-        painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth,
-                QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
-        painter.drawLine(self.lastPoint, endPoint)
+    def beforeDraw(self,temp):
+        if not self.imagePainter:
+            self.imagePainter = QtGui.QPainter(self.image)
+
+        if self.tempDrawing:
+            self.restoreDrawing()
+            if not temp:
+                self.tempDrawing = False
+            else:
+                self.saveDrawing()
+        else:
+            if temp:
+                self.tempDrawing = True
+
+    def plotPoint(self, point, temp = False):
+        self.beforeDraw(temp)
+        if not point:
+            return
+
+        self.imagePainter.setPen(QtGui.QPen(self.myPenColor, 10,
+                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+        self.imagePainter.drawPoint(point)
+        if not temp:
+            print 'saved'
+            self.saveDrawing()
+        else:
+            pass
+        self.update()
+
+    def drawLineWithColor(self, startPoint, endPoint, temp=False):
+        if temp:
+            return
+        self.beforeDraw(temp)
+        self.imagePainter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth,
+                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+        self.imagePainter.drawLine(startPoint, endPoint)
+        if not temp:
+            self.saveDrawing()
+        else:
+            pass
         self.modified = True
 
         rad = self.myPenWidth / 2 + 2
         self.update(QtCore.QRect(self.lastPoint, endPoint).normalized().adjusted(-rad, -rad, +rad, +rad))
         self.lastPoint = QtCore.QPoint(endPoint)
+        self.update()
+
+    def drawLineTo(self, endPoint, temp=False):
+        self.drawLineWithColor(self.lastPoint,endPoint,temp=temp)
 
     def resizeImage(self, image, newSize):
         if image.size() == newSize:
@@ -170,17 +265,14 @@ class ScribbleArea(QtGui.QWidget):
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-
         self.saveAsActs = []
-
+        self.appState = 'Start'
         self.scribbleArea = ScribbleArea()
         self.setCentralWidget(self.scribbleArea)
-
         self.createActions()
         self.createMenus()
-
-        self.setWindowTitle("Scribble")
-        self.resize(500, 500)
+        self.setWindowTitle("3-Sweep")
+        self.resize(1500, 1500)
 
     def closeEvent(self, event):
         if self.maybeSave():
@@ -212,20 +304,20 @@ class MainWindow(QtGui.QMainWindow):
             self.scribbleArea.setPenWidth(newWidth)
 
     def about(self):
-        QtGui.QMessageBox.about(self, "About Scribble",
-                "<p>The <b>Scribble</b> example shows how to use "
-                "QMainWindow as the base widget for an application, and how "
-                "to reimplement some of QWidget's event handlers to receive "
-                "the events generated for the application's widgets:</p>"
-                "<p> We reimplement the mouse event handlers to facilitate "
-                "drawing, the paint event handler to update the application "
-                "and the resize event handler to optimize the application's "
-                "appearance. In addition we reimplement the close event "
-                "handler to intercept the close events before terminating "
-                "the application.</p>"
-                "<p> The example also demonstrates how to use QPainter to "
-                "draw an image in real time, as well as to repaint "
-                "widgets.</p>")
+        QtGui.QMessageBox.about(self, "About 3-Sweep",
+                "To be added")
+
+    def stateUpdate(self, state=None):
+        if state == None:
+            pass
+        else:
+            self.appState = state
+        state = (self.appState)
+        self.scribbleArea.state = state
+        if state=='start':
+            pass
+        elif state=='sweep':
+            pass
 
     def createActions(self):
         self.openAct = QtGui.QAction("&Open...", self, shortcut="Ctrl+O",
@@ -243,7 +335,7 @@ class MainWindow(QtGui.QMainWindow):
         self.printAct = QtGui.QAction("&Print...", self,
                 triggered=self.scribbleArea.print_)
 
-        self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
+        self.exitAct = QtGui.QAction("&Exit", self, shortcut="Ctrl+Q",
                 triggered=self.close)
 
         self.penColorAct = QtGui.QAction("&Pen Color...", self,
