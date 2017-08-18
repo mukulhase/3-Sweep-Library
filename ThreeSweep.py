@@ -3,6 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
+def auto_canny(image, sigma=0.33):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+
+    # apply automatic Canny edge detection using the computed median
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = cv2.Canny(image, lower, upper)
+
+    # return the edged image
+    return edged
+
 class ThreeSweep():
     ''' Module class for Three Sweep '''
 
@@ -12,12 +25,13 @@ class ThreeSweep():
         self.objectPoints = []
         self.axisResolution = 10
         self.primitiveDensity = 40
+        self.gradient = None
         pass
 
     def loadImage(self, image):
         ''' Load image into module for processing '''
         self.filename = image
-        if type(image) is str:
+        if type(image) is unicode:
             self.image = cv2.imread(image,0)
         else:
             self.image = image
@@ -31,8 +45,9 @@ class ThreeSweep():
 
     def getEdges(self):
         ''' Run edge detection on the image '''
-        self.gradient = cv2.Canny(self.image)
-        cv2.imshow('edges',self.gradient)
+        print self.image
+        self.gradient = auto_canny(self.image)
+        return self.gradient
         pass
 
     def matlabCode(self):
@@ -120,11 +135,12 @@ class ThreeSweep():
         self.minor = point
         pass
 
-    def addSweepPoint(self):
+    def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
 
         def detectBoundaryPoints(axisPoint, slope):
             ''' Detect points on the boundary '''
+            ##TODO: look at canny and intersect
             pass
 
     def pickPrimitive(self):

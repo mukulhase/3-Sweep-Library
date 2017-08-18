@@ -50,6 +50,35 @@ from ThreeSweep import ThreeSweep
 threesweep = ThreeSweep()
 
 from PyQt4 import QtCore, QtGui
+ from PyQt4.QtGui import qRgb, QImage
+ import numpy as np
+
+
+ class NotImplementedException:
+     pass
+
+
+ gray_color_table = [qRgb(i, i, i) for i in range(256)]
+
+
+ def toQImage(im, copy=False):
+     if im is None:
+         return QImage()
+
+     if im.dtype == np.uint8:
+         if len(im.shape) == 2:
+             qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
+             qim.setColorTable(gray_color_table)
+             return qim.copy() if copy else qim
+
+         elif len(im.shape) == 3:
+             if im.shape[2] == 3:
+                 qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
+                 return qim.copy() if copy else qim
+             elif im.shape[2] == 4:
+                 qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
+                 return qim.copy() if copy else qim
+
 
 class ScribbleArea(QtGui.QWidget):
     def __init__(self, parent=None):
@@ -69,6 +98,7 @@ class ScribbleArea(QtGui.QWidget):
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
         self.imagePainter = None
+        self.edges = None
 
     def stateUpdate(self, state=None):
         if state == None:
@@ -181,6 +211,7 @@ class ScribbleArea(QtGui.QWidget):
 
     def restoreDrawing(self):
         self.imagePainter.drawImage(QtCore.QPoint(0, 0), self.oldimage)
+        self.imagePainter.drawImage(0, 0, toQImage(self.edges))
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -300,7 +331,8 @@ class MainWindow(QtGui.QMainWindow):
             if fileName:
                 self.scribbleArea.openImage(fileName)
                 threesweep.loadImage(fileName)
-                threesweep.getEdges()
+                self.scribbleArea.edges = threesweep.getEdges()
+
 
     def save(self):
         action = self.sender()
