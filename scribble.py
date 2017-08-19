@@ -23,7 +23,7 @@ class ScribbleArea(QtGui.QWidget):
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.modified = False
         self.clicked = False
-        self.state = 'Start'
+        self.state = 'Null'
         self.myPenWidth = 5
         self.myPenColor = QtCore.Qt.blue
         self.image = QtGui.QImage()
@@ -195,6 +195,9 @@ class ScribbleArea(QtGui.QWidget):
     def drawLineTo(self, endPoint, temp=False):
         self.drawLineWithColor(self.lastPoint,endPoint,temp=temp)
 
+    def startSweep(self):
+        self.stateUpdate('Start')
+
     def drawRectangles(self):
         self.beforeDraw(False)
         color = QtGui.QColor(255, 0, 0)
@@ -239,7 +242,7 @@ class ScribbleArea(QtGui.QWidget):
     def penWidth(self):
         return self.myPenWidth
 
-    def rectDraw(self):
+    def startDrawRect(self):
         self.stateUpdate('DrawRect')
 
     # Covert numpy array to QImage // error in line 4
@@ -361,8 +364,11 @@ class MainWindow(QtGui.QMainWindow):
         self.penWidthAct = QtGui.QAction("Pen &Width...", self,
                 triggered=self.penWidth)
 
+        self.startSweepAct = QtGui.QAction("&Start Sweeping..", self,
+                                         triggered=self.scribbleArea.startSweep)
+
         self.drawRectAct = QtGui.QAction("&Draw Rectangle", self,
-                                         triggered=self.scribbleArea.rectDraw)
+                                         triggered=self.scribbleArea.startDrawRect)
 
         self.grabCutAct = QtGui.QAction("&Grab Cut", self,
                                          triggered=self.scribbleArea.grabCut)
@@ -404,6 +410,7 @@ class MainWindow(QtGui.QMainWindow):
     def createToolBar(self):
 
         drawingMenu = QtGui.QToolBar("&Draw",self)
+        drawingMenu.addAction(self.startSweepAct)
         drawingMenu.addAction(self.drawRectAct)
         drawingMenu.addAction(self.grabCutAct)
 
