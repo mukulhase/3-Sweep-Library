@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+# !/usr/bin/env python
 # structured edges, iopl edge detection
 
 #############################################################################
@@ -44,40 +44,42 @@
 
 # These are only needed for Python v2 but are harmless for Python v3
 import sip
+
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
 from ThreeSweep import ThreeSweep
+
 threesweep = ThreeSweep()
 
 from PyQt4 import QtCore, QtGui
- from PyQt4.QtGui import qRgb, QImage
- import numpy as np
+from PyQt4.QtGui import qRgb, QImage
+import numpy as np
 
 
- class NotImplementedException:
-     pass
+class NotImplementedException:
+    pass
 
 
- gray_color_table = [qRgb(i, i, i) for i in range(256)]
+gray_color_table = [qRgb(i, i, i) for i in range(256)]
 
 
- def toQImage(im, copy=False):
-     if im is None:
-         return QImage()
+def toQImage(im, copy=False):
+    if im is None:
+        return QImage()
 
-     if im.dtype == np.uint8:
-         if len(im.shape) == 2:
-             qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
-             qim.setColorTable(gray_color_table)
-             return qim.copy() if copy else qim
+    if im.dtype == np.uint8:
+        if len(im.shape) == 2:
+            qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
+            qim.setColorTable(gray_color_table)
+            return qim.copy() if copy else qim
 
-         elif len(im.shape) == 3:
-             if im.shape[2] == 3:
-                 qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
-                 return qim.copy() if copy else qim
-             elif im.shape[2] == 4:
-                 qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
-                 return qim.copy() if copy else qim
+        elif len(im.shape) == 3:
+            if im.shape[2] == 3:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
+                return qim.copy() if copy else qim
+            elif im.shape[2] == 4:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
+                return qim.copy() if copy else qim
 
 
 class ScribbleArea(QtGui.QWidget):
@@ -106,7 +108,7 @@ class ScribbleArea(QtGui.QWidget):
         else:
             self.state = state
         state = (self.state)
-        if state=='Start':
+        if state == 'Start':
             pass
         elif self.state == 'FirstSweep':
             self.setPenColor(QtCore.Qt.blue)
@@ -179,13 +181,13 @@ class ScribbleArea(QtGui.QWidget):
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
 
         if self.state == 'SecondSweep':
-            self.drawLineWithColor(self.secondPoint , event.pos(), temp=True)
-            distance = (self.firstPoint-self.secondPoint)
-            center = (self.firstPoint+self.secondPoint)/2
+            self.drawLineWithColor(self.secondPoint, event.pos(), temp=True)
+            distance = (self.firstPoint - self.secondPoint)
+            center = (self.firstPoint + self.secondPoint) / 2
             minor = (center - event.pos()).y()
-            distance = (distance.x())**2 + (distance.y())**2
-            distance = distance**0.5
-            self.imagePainter.drawEllipse(center,distance/2, minor)
+            distance = (distance.x()) ** 2 + (distance.y()) ** 2
+            distance = distance ** 0.5
+            self.imagePainter.drawEllipse(center, distance / 2, minor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
@@ -226,7 +228,7 @@ class ScribbleArea(QtGui.QWidget):
 
         super(ScribbleArea, self).resizeEvent(event)
 
-    def beforeDraw(self,temp):
+    def beforeDraw(self, temp):
         if not self.imagePainter:
             self.imagePainter = QtGui.QPainter(self.image)
 
@@ -246,12 +248,12 @@ class ScribbleArea(QtGui.QWidget):
         else:
             pass
 
-    def plotPoint(self, point, temp = False):
+    def plotPoint(self, point, temp=False):
         self.beforeDraw(temp)
         if not point:
             return
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, 10,
-                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+                                            QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawPoint(point)
         self.afterDraw(temp)
         self.update()
@@ -259,7 +261,7 @@ class ScribbleArea(QtGui.QWidget):
     def drawLineWithColor(self, startPoint, endPoint, temp=False):
         self.beforeDraw(temp)
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth,
-                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+                                            QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawLine(startPoint, endPoint)
         self.afterDraw(temp)
         self.modified = True
@@ -270,7 +272,7 @@ class ScribbleArea(QtGui.QWidget):
         self.update()
 
     def drawLineTo(self, endPoint, temp=False):
-        self.drawLineWithColor(self.lastPoint,endPoint,temp=temp)
+        self.drawLineWithColor(self.lastPoint, endPoint, temp=temp)
 
     def resizeImage(self, image, newSize):
         if image.size() == newSize:
@@ -327,12 +329,11 @@ class MainWindow(QtGui.QMainWindow):
     def open(self):
         if self.maybeSave():
             fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File",
-                    QtCore.QDir.currentPath())
+                                                         QtCore.QDir.currentPath())
             if fileName:
                 self.scribbleArea.openImage(fileName)
                 threesweep.loadImage(fileName)
                 self.scribbleArea.edges = threesweep.getEdges()
-
 
     def save(self):
         action = self.sender()
@@ -346,13 +347,13 @@ class MainWindow(QtGui.QMainWindow):
 
     def penWidth(self):
         newWidth, ok = QtGui.QInputDialog.getInteger(self, "Scribble",
-                "Select pen width:", self.scribbleArea.penWidth(), 1, 50, 1)
+                                                     "Select pen width:", self.scribbleArea.penWidth(), 1, 50, 1)
         if ok:
             self.scribbleArea.setPenWidth(newWidth)
 
     def about(self):
         QtGui.QMessageBox.about(self, "About 3-Sweep",
-                "To be added")
+                                "To be added")
 
     def stateUpdate(self, state=None):
         if state == None:
@@ -361,14 +362,14 @@ class MainWindow(QtGui.QMainWindow):
             self.appState = state
         state = (self.appState)
         self.scribbleArea.state = state
-        if state=='start':
+        if state == 'start':
             pass
-        elif state=='sweep':
+        elif state == 'sweep':
             pass
 
     def createActions(self):
         self.openAct = QtGui.QAction("&Open...", self, shortcut="Ctrl+O",
-                triggered=self.open)
+                                     triggered=self.open)
 
         for format in QtGui.QImageWriter.supportedImageFormats():
             format = str(format)
@@ -380,24 +381,24 @@ class MainWindow(QtGui.QMainWindow):
             self.saveAsActs.append(action)
 
         self.printAct = QtGui.QAction("&Print...", self,
-                triggered=self.scribbleArea.print_)
+                                      triggered=self.scribbleArea.print_)
 
         self.exitAct = QtGui.QAction("&Exit", self, shortcut="Ctrl+Q",
-                triggered=self.close)
+                                     triggered=self.close)
 
         self.penColorAct = QtGui.QAction("&Pen Color...", self,
-                triggered=self.penColor)
+                                         triggered=self.penColor)
 
         self.penWidthAct = QtGui.QAction("Pen &Width...", self,
-                triggered=self.penWidth)
+                                         triggered=self.penWidth)
 
         self.clearScreenAct = QtGui.QAction("&Clear Screen", self,
-                shortcut="Ctrl+L", triggered=self.scribbleArea.clearImage)
+                                            shortcut="Ctrl+L", triggered=self.scribbleArea.clearImage)
 
         self.aboutAct = QtGui.QAction("&About", self, triggered=self.about)
 
         self.aboutQtAct = QtGui.QAction("About &Qt", self,
-                triggered=QtGui.qApp.aboutQt)
+                                        triggered=QtGui.qApp.aboutQt)
 
     def createMenus(self):
         self.saveAsMenu = QtGui.QMenu("&Save As", self)
@@ -428,10 +429,10 @@ class MainWindow(QtGui.QMainWindow):
     def maybeSave(self):
         if self.scribbleArea.isModified():
             ret = QtGui.QMessageBox.warning(self, "Scribble",
-                        "The image has been modified.\n"
-                        "Do you want to save your changes?",
-                        QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
-                        QtGui.QMessageBox.Cancel)
+                                            "The image has been modified.\n"
+                                            "Do you want to save your changes?",
+                                            QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
+                                            QtGui.QMessageBox.Cancel)
             if ret == QtGui.QMessageBox.Save:
                 return self.saveFile('png')
             elif ret == QtGui.QMessageBox.Cancel:
@@ -443,8 +444,9 @@ class MainWindow(QtGui.QMainWindow):
         initialPath = QtCore.QDir.currentPath() + '/untitled.' + fileFormat
 
         fileName = QtGui.QFileDialog.getSaveFileName(self, "Save As",
-                initialPath,
-                "%s Files (*.%s);;All Files (*)" % (fileFormat.upper(), fileFormat))
+                                                     initialPath,
+                                                     "%s Files (*.%s);;All Files (*)" % (
+                                                     fileFormat.upper(), fileFormat))
         if fileName:
             return self.scribbleArea.saveImage(fileName, fileFormat)
 
@@ -452,7 +454,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-
     import sys
 
     app = QtGui.QApplication(sys.argv)
