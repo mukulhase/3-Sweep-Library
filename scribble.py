@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+ #!/usr/bin/env python
 # structured edges, iopl edge detection
 
 #############################################################################
@@ -55,7 +55,6 @@ import numpy as np
 threesweep = ThreeSweep()
 last_time = None
 
-
 class NotImplementedException:
     pass
 
@@ -66,13 +65,13 @@ gray_color_table = [qRgb(i, i, i) for i in range(256)]
 def toQImage(im, copy=False):
     if im is None:
         return QImage()
-
+     if im.dtype == np.uint8:
     if im.dtype == np.uint8:
         if len(im.shape) == 2:
             qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
             qim.setColorTable(gray_color_table)
             return qim.copy() if copy else qim
-
+         elif len(im.shape) == 3:
         elif len(im.shape) == 3:
             if im.shape[2] == 3:
                 qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
@@ -142,7 +141,7 @@ class ScribbleArea(QtGui.QWidget):
         return True
 
     def saveImage(self, fileName, fileFormat):
-        visibleImage = self.imagestate
+        visibleImage = self.image
         self.resizeImage(visibleImage, self.size())
 
         if visibleImage.save(fileName, fileFormat):
@@ -169,6 +168,7 @@ class ScribbleArea(QtGui.QWidget):
             elif self.state == 'FirstSweep':
                 pass
             elif self.state == 'SecondSweep':
+                self.stateUpdate('ThirdSweep')
                 self.thirdPoint = event.pos()
                 self.stateUpdate('ThirdSweep')
                 pass
@@ -361,6 +361,7 @@ class MainWindow(QtGui.QMainWindow):
                 threesweep.loadImage(fileName)
                 self.scribbleArea.edges = threesweep.getEdges()
 
+
     def save(self):
         action = self.sender()
         fileFormat = action.data()
@@ -480,6 +481,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
+
     import sys
 
     app = QtGui.QApplication(sys.argv)
