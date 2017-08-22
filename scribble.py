@@ -6,6 +6,7 @@ sip.setapi('QVariant', 2)
 import copy
 import cv2
 import numpy as np
+from ThreeSweep import ThreeSweep
 
 from PyQt4 import QtCore, QtGui
 
@@ -276,6 +277,8 @@ class ScribbleArea(QtGui.QWidget):
 
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
+        threesweep = ThreeSweep()
+
         cv2.imwrite('grabcuted.png', img)
         # im = np.require(img, np.uint8, 'C')
         # qImage = self.toQImage(im)
