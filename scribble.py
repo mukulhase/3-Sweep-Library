@@ -20,27 +20,6 @@ last_time = None
 class NotImplementedException:
     pass
 
-
-gray_color_table = [qRgb(i, i, i) for i in range(256)]
-
-
-def toQImage(im, copy=False):
-    if im is None:
-        return QImage()
-    if im.dtype == np.uint8:
-        if len(im.shape) == 2:
-            qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
-            qim.setColorTable(gray_color_table)
-            return qim.copy() if copy else qim
-        elif len(im.shape) == 3:
-            if im.shape[2] == 3:
-                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
-                return qim.copy() if copy else qim
-            elif im.shape[2] == 4:
-                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
-                return qim.copy() if copy else qim
-
-
 class ScribbleArea(QtGui.QWidget):
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
@@ -56,7 +35,7 @@ class ScribbleArea(QtGui.QWidget):
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.modified = False
         self.clicked = False
-        self.state = 'Null'
+        self.state = 'None'
         self.myPenWidth = 5
         self.myPenColor = QtCore.Qt.blue
         self.image = QtGui.QImage()
@@ -182,7 +161,7 @@ class ScribbleArea(QtGui.QWidget):
         elif self.state == 'DrawRect':
             self.rectPoint2 = event.pos()
             self.drawRectangles()
-            self.stateUpdate('Complete')
+            self.update()
         elif self.state == 'Complete':
             self.restoreDrawing()
             self.update()
@@ -210,7 +189,7 @@ class ScribbleArea(QtGui.QWidget):
 
     def restoreDrawing(self):
         self.imagePainter.drawImage(QtCore.QPoint(0, 0), self.oldimage)
-        self.imagePainter.drawImage(0, 0, toQImage(self.edges))
+        self.imagePainter.drawImage(0, 0, self.toQImage(self.edges))
   
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -322,21 +301,21 @@ class ScribbleArea(QtGui.QWidget):
         self.stateUpdate('DrawRect')
 
     # Covert numpy array to QImage // error in line 4
-    def toQImage(im, copy=False):
+    def toQImage(self, im, copy=False):
         gray_color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
         if im is None:
-            return QtGui.QImage()
+            return QImage()
         if im.dtype == np.uint8:
             if len(im.shape) == 2:
-                qim = QtGui.QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QtGui.QImage.Format_Indexed8)
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
                 qim.setColorTable(gray_color_table)
                 return qim.copy() if copy else qim
             elif len(im.shape) == 3:
                 if im.shape[2] == 3:
-                    qim = QtGui.QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QtGui.QImage.Format_RGB888);
+                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
                     return qim.copy() if copy else qim
                 elif im.shape[2] == 4:
-                    qim = QtGui.QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QtGui.QImage.Format_ARGB32);
+                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
                     return qim.copy() if copy else qim
 
     def grabCut(self):
@@ -363,7 +342,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.saveAsActs = []
-        self.appState = 'Start'
+        self.appState = 'None'
         self.scribbleArea = ScribbleArea()
         self.setCentralWidget(self.scribbleArea)
         self.createActions()
