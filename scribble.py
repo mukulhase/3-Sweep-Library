@@ -1,14 +1,45 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 # These are only needed for Python v2 but are harmless for Python v3.
+# structured edges, iopl edge detection
+
 import sip
+import time
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
 import copy
 import cv2
 import numpy as np
-from ThreeSweep import ThreeSweep
 
+from ThreeSweep import ThreeSweep
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtGui import qRgb, QImage
+
+threesweep = ThreeSweep()
+last_time = None
+
+class NotImplementedException:
+    pass
+
+
+gray_color_table = [qRgb(i, i, i) for i in range(256)]
+
+
+def toQImage(im, copy=False):
+    if im is None:
+        return QImage()
+    if im.dtype == np.uint8:
+        if len(im.shape) == 2:
+            qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
+            qim.setColorTable(gray_color_table)
+            return qim.copy() if copy else qim
+        elif len(im.shape) == 3:
+            if im.shape[2] == 3:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
+                return qim.copy() if copy else qim
+            elif im.shape[2] == 4:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
+                return qim.copy() if copy else qim
+
 
 class ScribbleArea(QtGui.QWidget):
     def __init__(self, parent=None):
@@ -21,6 +52,7 @@ class ScribbleArea(QtGui.QWidget):
         self.rectPoint1 = None
         self.rectPoint2 = None
         self.contourPoints = []
+        self.overLayed = {}
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.modified = False
         self.clicked = False
@@ -31,6 +63,7 @@ class ScribbleArea(QtGui.QWidget):
         self.imagePath = None
         self.lastPoint = QtCore.QPoint()
         self.imagePainter = None
+        self.edges = None
 
     def stateUpdate(self, state=None):
         if state == None:
@@ -38,6 +71,20 @@ class ScribbleArea(QtGui.QWidget):
         else:
             self.state = state
         state = (self.state)
+        if state == 'Start':
+            pass
+        elif self.state == 'FirstSweep':
+            self.setPenColor(QtCore.Qt.blue)
+            pass
+        elif self.state == 'SecondSweep':
+            self.setPenColor(QtCore.Qt.red)
+            threesweep.setMajor(self.firstPoint, self.secondPoint)
+            pass
+        elif self.state == 'ThirdSweep':
+            print self.thirdPoint
+            threesweep.setMinor(self.thirdPoint)
+            self.setPenColor(QtCore.Qt.green)
+            pass
         self.plotPoint(self.firstPoint)
         self.plotPoint(self.secondPoint)
         self.plotPoint(self.thirdPoint)
@@ -53,6 +100,7 @@ class ScribbleArea(QtGui.QWidget):
         ##self.resizeImage(loadedImage, newSize)
         self.image = loadedImage
         self.modified = False
+        self.stateUpdate('Start')
         self.update()
         return True
 
@@ -86,6 +134,7 @@ class ScribbleArea(QtGui.QWidget):
             elif self.state == 'SecondSweep':
                 self.stateUpdate('ThirdSweep')
                 self.thirdPoint = event.pos()
+                self.stateUpdate('ThirdSweep')
                 pass
             elif self.state == 'ThirdSweep':
                 pass
@@ -96,10 +145,26 @@ class ScribbleArea(QtGui.QWidget):
 
     def mouseMoveEvent(self, event):
         if (event.buttons() & QtCore.Qt.LeftButton) and self.state == 'ThirdSweep' and self.clicked:
+            threesweep.addSweepPoint([event.pos().x(), event.pos().y()])
             self.drawLineTo(event.pos())
+            global last_time
+            if not last_time:
+                last_time = time.time()
+            if (time.time() - last_time) > 0.1:
+                last_time = time.time()
+            self.contourPointsOverlay()
 
         if self.state == 'FirstSweep':
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
+
+        if self.state == 'SecondSweep':
+            self.drawLineWithColor(self.secondPoint, event.pos(), temp=True)
+            distance = (self.firstPoint - self.secondPoint)
+            center = (self.firstPoint + self.secondPoint) / 2
+            minor = (center - event.pos()).y()
+            distance = (distance.x()) ** 2 + (distance.y()) ** 2
+            distance = distance ** 0.5
+            self.imagePainter.drawEllipse(center, distance / 2, minor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
@@ -125,14 +190,28 @@ class ScribbleArea(QtGui.QWidget):
         self.clicked = False
 
     def saveDrawing(self):
-        pass
-        ##self.oldimage = QtGui.QImage(self.image)
+        self.oldimage = QtGui.QImage(self.image)
+
+    def contourPointsOverlay(self):
+        def checkAndPlot(i):
+            x = int(round(i.x))
+            y = int(round(i.y))
+            if ((x, y) in self.overLayed):
+                pass
+            else:
+                self.plotPoint(QtCore.QPoint(x, y))
+                self.overLayed[x, y] = True
+
+        for i in threesweep.leftContour:
+            checkAndPlot(i)
+        for i in threesweep.rightContour:
+            checkAndPlot(i)
+
 
     def restoreDrawing(self):
-        pass
-        ##self.imagePainter.end()
-        ##self.imagePainter= QtGui.QPainter(self.oldimage)
-
+        self.imagePainter.drawImage(QtCore.QPoint(0, 0), self.oldimage)
+        self.imagePainter.drawImage(0, 0, toQImage(self.edges))
+  
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
         painter.drawImage(event.rect(), self.image)
@@ -146,7 +225,7 @@ class ScribbleArea(QtGui.QWidget):
 
         super(ScribbleArea, self).resizeEvent(event)
 
-    def beforeDraw(self,temp):
+    def beforeDraw(self, temp):
         if not self.imagePainter:
             self.imagePainter = QtGui.QPainter(self.image)
 
@@ -160,32 +239,28 @@ class ScribbleArea(QtGui.QWidget):
             if temp:
                 self.tempDrawing = True
 
-    def plotPoint(self, point, temp = False):
+    def afterDraw(self, temp):
+        if not temp:
+            self.saveDrawing()
+        else:
+            pass
+
+    def plotPoint(self, point, temp=False):
         self.beforeDraw(temp)
         if not point:
             return
-
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, 10,
-                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+                                            QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawPoint(point)
-        if not temp:
-            print 'saved'
-            self.saveDrawing()
-        else:
-            pass
+        self.afterDraw(temp)
         self.update()
 
     def drawLineWithColor(self, startPoint, endPoint, temp=False):
-        if temp:
-            return
         self.beforeDraw(temp)
         self.imagePainter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth,
-                                  QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+                                            QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.imagePainter.drawLine(startPoint, endPoint)
-        if not temp:
-            self.saveDrawing()
-        else:
-            pass
+        self.afterDraw(temp)
         self.modified = True
 
         rad = self.myPenWidth / 2 + 2
@@ -194,7 +269,7 @@ class ScribbleArea(QtGui.QWidget):
         self.update()
 
     def drawLineTo(self, endPoint, temp=False):
-        self.drawLineWithColor(self.lastPoint,endPoint,temp=temp)
+        self.drawLineWithColor(self.lastPoint, endPoint, temp=temp)
 
     def startSweep(self):
         self.stateUpdate('Start')
@@ -306,9 +381,12 @@ class MainWindow(QtGui.QMainWindow):
     def open(self):
         if self.maybeSave():
             fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File",
-                    QtCore.QDir.currentPath())
+                                                         QtCore.QDir.currentPath())
             if fileName:
                 self.scribbleArea.openImage(fileName)
+                threesweep.loadImage(fileName)
+                self.scribbleArea.edges = threesweep.getEdges()
+
 
     def save(self):
         action = self.sender()
@@ -322,13 +400,13 @@ class MainWindow(QtGui.QMainWindow):
 
     def penWidth(self):
         newWidth, ok = QtGui.QInputDialog.getInteger(self, "Scribble",
-                "Select pen width:", self.scribbleArea.penWidth(), 1, 50, 1)
+                                                     "Select pen width:", self.scribbleArea.penWidth(), 1, 50, 1)
         if ok:
             self.scribbleArea.setPenWidth(newWidth)
 
     def about(self):
         QtGui.QMessageBox.about(self, "About 3-Sweep",
-                "To be added")
+                                "To be added")
 
     def stateUpdate(self, state=None):
         if state == None:
@@ -337,14 +415,14 @@ class MainWindow(QtGui.QMainWindow):
             self.appState = state
         state = (self.appState)
         self.scribbleArea.state = state
-        if state=='start':
+        if state == 'start':
             pass
-        elif state=='sweep':
+        elif state == 'sweep':
             pass
 
     def createActions(self):
         self.openAct = QtGui.QAction("&Open...", self, shortcut="Ctrl+O",
-                triggered=self.open)
+                                     triggered=self.open)
 
         for format in QtGui.QImageWriter.supportedImageFormats():
             format = str(format)
@@ -356,16 +434,16 @@ class MainWindow(QtGui.QMainWindow):
             self.saveAsActs.append(action)
 
         self.printAct = QtGui.QAction("&Print...", self,
-                triggered=self.scribbleArea.print_)
+                                      triggered=self.scribbleArea.print_)
 
         self.exitAct = QtGui.QAction("&Exit", self, shortcut="Ctrl+Q",
-                triggered=self.close)
+                                     triggered=self.close)
 
         self.penColorAct = QtGui.QAction("&Pen Color...", self,
-                triggered=self.penColor)
+                                         triggered=self.penColor)
 
         self.penWidthAct = QtGui.QAction("Pen &Width...", self,
-                triggered=self.penWidth)
+                                         triggered=self.penWidth)
 
         self.startSweepAct = QtGui.QAction("&Start Sweeping..", self,
                                          triggered=self.scribbleArea.startSweep)
@@ -377,12 +455,12 @@ class MainWindow(QtGui.QMainWindow):
                                          triggered=self.scribbleArea.grabCut)
 
         self.clearScreenAct = QtGui.QAction("&Clear Screen", self,
-                shortcut="Ctrl+L", triggered=self.scribbleArea.clearImage)
+                                            shortcut="Ctrl+L", triggered=self.scribbleArea.clearImage)
 
         self.aboutAct = QtGui.QAction("&About", self, triggered=self.about)
 
         self.aboutQtAct = QtGui.QAction("About &Qt", self,
-                triggered=QtGui.qApp.aboutQt)
+                                        triggered=QtGui.qApp.aboutQt)
 
     def createMenus(self):
         self.saveAsMenu = QtGui.QMenu("&Save As", self)
@@ -422,10 +500,10 @@ class MainWindow(QtGui.QMainWindow):
     def maybeSave(self):
         if self.scribbleArea.isModified():
             ret = QtGui.QMessageBox.warning(self, "Scribble",
-                        "The image has been modified.\n"
-                        "Do you want to save your changes?",
-                        QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
-                        QtGui.QMessageBox.Cancel)
+                                            "The image has been modified.\n"
+                                            "Do you want to save your changes?",
+                                            QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
+                                            QtGui.QMessageBox.Cancel)
             if ret == QtGui.QMessageBox.Save:
                 return self.saveFile('png')
             elif ret == QtGui.QMessageBox.Cancel:
@@ -437,8 +515,9 @@ class MainWindow(QtGui.QMainWindow):
         initialPath = QtCore.QDir.currentPath() + '/untitled.' + fileFormat
 
         fileName = QtGui.QFileDialog.getSaveFileName(self, "Save As",
-                initialPath,
-                "%s Files (*.%s);;All Files (*)" % (fileFormat.upper(), fileFormat))
+                                                     initialPath,
+                                                     "%s Files (*.%s);;All Files (*)" % (
+                                                         fileFormat.upper(), fileFormat))
         if fileName:
             return self.scribbleArea.saveImage(fileName, fileFormat)
 

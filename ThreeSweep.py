@@ -1,22 +1,58 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from sympy import *
+from sympy.geometry import *
 from mpl_toolkits.mplot3d import Axes3D
+import pdb;
+
+
+def getPoint(point):
+    if type(point) == list:
+        return Point(point[0], point[1])
+    return Point(point.x(), point.y())
+
+
+def roundPoint(point):
+    return [int(round(point.x)), int(round(point.y))]
+
+def auto_canny(image, sigma=0.33):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+
+    # apply automatic Canny edge detection using the computed median
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = cv2.Canny(image, lower, upper)
+
+    # return the edged image
+    return edged
 
 class ThreeSweep():
     ''' Module class for Three Sweep '''
 
     def __init__(self):
         self.image = None
-        self.contourPoints = []
+        self.leftContour = []
+        self.rightContour = []
         self.objectPoints = []
+        self.sweepPoints = []
+        self.primitivePoints = []
         self.axisResolution = 10
         self.primitiveDensity = 40
+        self.gradient = None
+        self.leftMajor = None
+        self.rightMajor = None
+        self.minor = None
         pass
 
-    def loadImage(self, filename):
+    def loadImage(self, image):
         ''' Load image into module for processing '''
-        self.image = cv2.imread(filename)
+        self.filename = image
+        if type(image) is unicode:
+            self.image = cv2.imread(image,0)
+        else:
+            self.image = image
         pass
 
     def showImage(self):
@@ -27,6 +63,8 @@ class ThreeSweep():
 
     def getEdges(self):
         ''' Run edge detection on the image '''
+        self.gradient = auto_canny(self.image)
+        return self.gradient
         pass
 
     def matlabCode(self):
@@ -104,22 +142,90 @@ class ThreeSweep():
         # cv2.imshow('img', obj_axis)
         # cv2.waitKey(0)
 
-    def setMajor(self):
+    def setMajor(self, point1, point2):
         ''' Set points for Major Axis '''
+        self.leftMajor = getPoint(point1)
+        self.rightMajor = getPoint(point2)
+        self.leftContour.append(self.leftMajor)
+        self.rightContour.append(self.rightMajor)
+        pass
+    def setMinor(self, point):
+        self.minor = getPoint(point)
+        self.sweepPoints.append(self.minor)
         pass
 
-    def addSweepPoint(self):
+    def update3DPoints(self, newPoints):
+        pass
+        # pdb.set_trace()
+        # center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
+        # radius = sum(newPoints[0] - newPoints[1])/2
+        # scaled = self.primitivePoints * radius
+        # transformed = scaled + center
+
+    def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
 
-        def detectBoundaryPoints(axisPoint, slope):
+        def detectBoundaryPoints(axisPoint, slope, left, right):
             ''' Detect points on the boundary '''
+
+            def searchOut(point, slope, inv=False, k=1):
+                if inv:
+                    k = -k
+                if (slope > 1):
+                    temp = point + Point(k * slope, k * 1)
+                else:
+                    temp = point + Point(k * 1, k * slope)
+                if inv:
+                    k = -k
+                index = roundPoint(temp)
+                if k > 35:
+                    return None
+                if (self.gradient[index[1]][index[0]] > 0):
+                    return temp
+                else:
+                    if inv:
+                        return searchOut(point, slope, False, k + 1)
+                    else:
+                        return searchOut(point, slope, True, k)
+
+            # offset by axis offset
+            left += slope
+            right += slope
+
+            # store as datatype
+            left = Point(left)
+            right = Point(right)
+            axisPoint = Point(axisPoint)
+
+            # get slope for ray search
+            slopeLeft = axisPoint - left
+            slopeRight = axisPoint - right
+            slopeLeft = slopeLeft.y / slopeLeft.x
+            slopeRight = slopeRight.y / slopeRight.x
+
+            # search for contour points
+            foundleft = searchOut(left, slopeLeft)
+            foundright = searchOut(right, slopeRight)
+            if (foundleft == None) or (foundright == None):
+                return [left, right]
+            else:
+                return [foundleft, foundright]
             pass
+
+        point = getPoint(point)
+        direction = point - self.sweepPoints[-1]
+        newPoints = detectBoundaryPoints(point, direction, self.leftContour[-1], self.rightContour[-1])
+        self.sweepPoints.append(point)
+        self.leftContour.append(newPoints[0])
+        self.rightContour.append(newPoints[1])
+        self.update3DPoints(newPoints)
 
     def pickPrimitive(self):
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
         self.primitiveDensity = 40
         angles = np.linspace(0, 2 * np.pi, self.primitiveDensity)
-        return np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)])
+        self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)])
+        return self.primitivePoints
 
     def plot3DArray(self,x):
         fig = plt.figure()
