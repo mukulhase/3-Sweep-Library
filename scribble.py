@@ -60,7 +60,7 @@ class ScribbleArea(QtGui.QWidget):
             threesweep.setMajor(self.firstPoint, self.secondPoint)
             pass
         elif self.state == 'ThirdSweep':
-            print self.thirdPoint
+            threesweep.pickPrimitive()
             threesweep.setMinor(self.thirdPoint)
             self.setPenColor(QtCore.Qt.green)
             pass
@@ -111,7 +111,6 @@ class ScribbleArea(QtGui.QWidget):
             elif self.state == 'FirstSweep':
                 pass
             elif self.state == 'SecondSweep':
-                self.stateUpdate('ThirdSweep')
                 self.thirdPoint = event.pos()
                 self.stateUpdate('ThirdSweep')
                 pass
@@ -123,7 +122,7 @@ class ScribbleArea(QtGui.QWidget):
             self.clicked = True
 
     def mouseMoveEvent(self, event):
-        if (event.buttons() & QtCore.Qt.LeftButton) and self.state == 'ThirdSweep' and self.clicked:
+        if (event.buttons() & QtCore.Qt.LeftButton) and self.state == 'ThirdSweep':
             threesweep.addSweepPoint([event.pos().x(), event.pos().y()])
             self.drawLineTo(event.pos())
             global last_time
@@ -155,6 +154,7 @@ class ScribbleArea(QtGui.QWidget):
             self.secondPoint = event.pos()
             self.stateUpdate('SecondSweep')
         elif self.state == 'SecondSweep':
+            # self.thirdPoint = event.pos()
             pass
         elif self.state == 'ThirdSweep':
             self.stateUpdate('Complete')

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sympy import *
 from sympy.geometry import *
 from mpl_toolkits.mplot3d import Axes3D
-import pdb;
+import ipdb
 
 
 def getPoint(point):
@@ -155,11 +155,24 @@ class ThreeSweep():
         pass
 
     def update3DPoints(self, newPoints):
-        pass
-        # pdb.set_trace()
-        # center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
-        # radius = sum(newPoints[0] - newPoints[1])/2
-        # scaled = self.primitivePoints * radius
+        center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
+        diff = newPoints[0] - newPoints[1]
+        radius = ((diff.y**2 + diff.x**2)**(1/2))/2
+        scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
+        theta = atan2(diff.y, diff.x)
+        R = np.array([
+            [1, 0, 0, center[0]],
+            [0, 1, 0, 0],
+            [0, 0, 1, -center[1]],
+            [0, 0, 0, 1]])
+        R = R * np.array([
+            [cos(theta), 0, sin(theta), 0],
+            [0, 1, 0, 0],
+            [-sin(theta), 0, cos(theta), 0],
+            [0, 0, 0, 1]])
+        # ipdb.set_trace()
+
+
         # transformed = scaled + center
 
     def addSweepPoint(self, point):
@@ -171,10 +184,13 @@ class ThreeSweep():
             def searchOut(point, slope, inv=False, k=1):
                 if inv:
                     k = -k
-                if (slope > 1):
-                    temp = point + Point(k * slope, k * 1)
-                else:
-                    temp = point + Point(k * 1, k * slope)
+                try:
+                    if (slope > 1):
+                        temp = point + Point(k * slope, k * 1)
+                    else:
+                        temp = point + Point(k * 1, k * slope)
+                except:
+                    return
                 if inv:
                     k = -k
                 index = roundPoint(temp)
@@ -224,7 +240,7 @@ class ThreeSweep():
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
         self.primitiveDensity = 40
         angles = np.linspace(0, 2 * np.pi, self.primitiveDensity)
-        self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)])
+        self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)],np.float64)
         return self.primitivePoints
 
     def plot3DArray(self,x):
