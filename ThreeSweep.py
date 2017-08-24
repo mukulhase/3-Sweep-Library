@@ -158,7 +158,8 @@ class ThreeSweep():
         center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
         diff = newPoints[0] - newPoints[1]
         radius = ((diff.y**2 + diff.x**2)**(1/2))/2
-        scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
+        scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
+        # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = atan2(diff.y, diff.x)
         R = np.array([
             [1, 0, 0, center[0]],
@@ -170,10 +171,12 @@ class ThreeSweep():
             [0, 1, 0, 0],
             [-sin(theta), 0, cos(theta), 0],
             [0, 0, 0, 1]])
-        # ipdb.set_trace()
 
-
-        # transformed = scaled + center
+        affineTrans = np.dot(np.transpose(scaled), R[:, 0:3])
+        if (self.objectPoints):
+            self.objectPoints = np.concatenate((self.objectPoints,affineTrans), axis=0)
+        else:
+            self.objectPoints = affineTrans
 
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
@@ -249,6 +252,9 @@ class ThreeSweep():
         ax.scatter(x[0], x[1], x[2])
         plt.show()
 
+    def end(self):
+        plot3DArray(self.objectPoints)
+        pass
     def createSTL(self):
         ''' takes the object points in order and creates pairs of triangles, writes to a file'''
         pass
