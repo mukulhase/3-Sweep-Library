@@ -6,7 +6,6 @@ import sip
 import time
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
-import copy
 import cv2
 import numpy as np
 
@@ -164,6 +163,7 @@ class ScribbleArea(QtGui.QWidget):
             self.update()
         elif self.state == 'Complete':
             self.restoreDrawing()
+            threesweep.end()
             self.update()
 
         self.clicked = False
