@@ -35,7 +35,7 @@ class ThreeSweep():
         self.image = None
         self.leftContour = []
         self.rightContour = []
-        self.objectPoints = []
+        self.objectPoints = np.array([])
         self.sweepPoints = []
         self.primitivePoints = []
         self.axisResolution = 10
@@ -44,6 +44,9 @@ class ThreeSweep():
         self.leftMajor = None
         self.rightMajor = None
         self.minor = None
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        self.ax.set_aspect('equal')
         pass
 
     def loadImage(self, image):
@@ -157,26 +160,27 @@ class ThreeSweep():
     def update3DPoints(self, newPoints):
         center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
         diff = newPoints[0] - newPoints[1]
-        radius = ((diff.y**2 + diff.x**2)**(1/2))/2
+        radius = ((diff.y**2 + diff.x**2)**(0.5))/2
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
         # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = atan2(diff.y, diff.x)
-        R = np.array([
-            [1, 0, 0, center[0]],
-            [0, 1, 0, 0],
+        transformation = np.array([
+            [radius, 0, 0, center[0]],
+            [0, radius, 0, 0],
             [0, 0, 1, -center[1]],
-            [0, 0, 0, 1]])
-        R = R * np.array([
+            [0, 0, 0, 1]], dtype=np.float)
+        rotation = np.array([
             [cos(theta), 0, sin(theta), 0],
             [0, 1, 0, 0],
             [-sin(theta), 0, cos(theta), 0],
-            [0, 0, 0, 1]])
-
-        affineTrans = np.dot(np.transpose(scaled), R[:, 0:3])
-        if (self.objectPoints):
-            self.objectPoints = np.concatenate((self.objectPoints,affineTrans), axis=0)
+            [0, 0, 0, 1]],dtype=np.float)
+        tr = np.matmul(transformation,rotation)
+        affineTrans = np.matmul(tr, scaled)
+        if (self.objectPoints.any()):
+            self.objectPoints = np.concatenate((self.objectPoints,np.transpose(affineTrans)), axis=0)
         else:
-            self.objectPoints = affineTrans
+            self.objectPoints = np.transpose(affineTrans)
+        self.updatePlot(np.transpose(affineTrans))
 
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
@@ -247,13 +251,19 @@ class ThreeSweep():
         return self.primitivePoints
 
     def plot3DArray(self,x):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x[0], x[1], x[2])
-        plt.show()
+        #self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
+        #plt.show()
+        pass
+
+    def updatePlot(self,points):
+        #background = fig.canvas.copy_from_bbox(ax.bbox)
+        self.ax.plot(points[:,0],points[:,1],points[:,2])
+        plt.draw()
+        plt.pause(0.0001)
+        pass
 
     def end(self):
-        plot3DArray(self.objectPoints)
+        self.plot3DArray(self.objectPoints)
         pass
     def createSTL(self):
         ''' takes the object points in order and creates pairs of triangles, writes to a file'''
