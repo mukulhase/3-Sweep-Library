@@ -180,7 +180,7 @@ class ThreeSweep():
             self.objectPoints = np.concatenate((self.objectPoints,np.transpose(affineTrans)), axis=0)
         else:
             self.objectPoints = np.transpose(affineTrans)
-        self.updatePlot(np.transpose(affineTrans))
+        # self.updatePlot(np.transpose(affineTrans))
 
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''

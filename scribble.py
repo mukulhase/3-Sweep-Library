@@ -331,12 +331,16 @@ class ScribbleArea(QtGui.QWidget):
 
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
-        threesweep = ThreeSweep()
-
-        cv2.imwrite('grabcuted.png', img)
+        
+        imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        ret,thresh = cv2.threshold(imgray,50,255,0)
+        
+        cv2.imwrite('grabcuted.jpg', thresh, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         # im = np.require(img, np.uint8, 'C')
         # qImage = self.toQImage(im)
-        self.openImage('grabcuted.png')
+        self.openImage('grabcuted.jpg')
+        threesweep.loadImage(self.imagePath)
+        self.edges = threesweep.getEdges()
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
