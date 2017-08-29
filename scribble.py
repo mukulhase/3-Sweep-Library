@@ -59,6 +59,7 @@ class ScribbleArea(QtGui.QWidget):
             threesweep.setMajor(self.firstPoint, self.secondPoint)
             pass
         elif self.state == 'ThirdSweep':
+            
             threesweep.pickPrimitive()
             threesweep.setMinor(self.thirdPoint)
             self.setPenColor(QtCore.Qt.green)
@@ -141,7 +142,7 @@ class ScribbleArea(QtGui.QWidget):
             minor = (center - event.pos()).y()
             distance = (distance.x()) ** 2 + (distance.y()) ** 2
             distance = distance ** 0.5
-            self.imagePainter.drawEllipse(center, distance / 2, minor)
+            # self.imagePainter.drawEllipse(center, distance / 2, minor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
@@ -331,15 +332,11 @@ class ScribbleArea(QtGui.QWidget):
 
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
-        
+        # img[img != 0] = 255
         imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         ret,thresh = cv2.threshold(imgray,50,255,0)
         
-        cv2.imwrite('grabcuted.jpg', thresh, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-        # im = np.require(img, np.uint8, 'C')
-        # qImage = self.toQImage(im)
-        self.openImage('grabcuted.jpg')
-        threesweep.loadImage(self.imagePath)
+        threesweep.image = thresh
         self.edges = threesweep.getEdges()
 
 class MainWindow(QtGui.QMainWindow):
@@ -367,8 +364,8 @@ class MainWindow(QtGui.QMainWindow):
                                                          QtCore.QDir.currentPath())
             if fileName:
                 self.scribbleArea.openImage(fileName)
-                threesweep.loadImage(fileName)
-                self.scribbleArea.edges = threesweep.getEdges()
+                # threesweep.loadImage(fileName)
+                # self.scribbleArea.edges = threesweep.getEdges()
 
 
     def save(self):

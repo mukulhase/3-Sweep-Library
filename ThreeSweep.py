@@ -24,7 +24,6 @@ def auto_canny(image, sigma=0.33):
     lower = int(max(0, (1.0 - sigma) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edged = cv2.Canny(image, lower, upper)
-
     # return the edged image
     return edged
 
@@ -52,7 +51,7 @@ class ThreeSweep():
     def loadImage(self, image):
         ''' Load image into module for processing '''
         self.filename = image
-        if type(image) is unicode:
+        if type(image) is unicode or str:
             self.image = cv2.imread(image,0)
         else:
             self.image = image
@@ -251,8 +250,8 @@ class ThreeSweep():
         return self.primitivePoints
 
     def plot3DArray(self,x):
-        #self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
-        #plt.show()
+        self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
+        plt.show()
         pass
 
     def updatePlot(self,points):
