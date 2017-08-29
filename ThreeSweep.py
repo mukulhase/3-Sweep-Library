@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from sympy import *
 from sympy.geometry import *
 from mpl_toolkits.mplot3d import Axes3D
@@ -39,14 +40,14 @@ class ThreeSweep():
         self.sweepPoints = []
         self.primitivePoints = []
         self.axisResolution = 10
-        self.primitiveDensity = 40
+        self.primitiveDensity = 20
         self.gradient = None
         self.leftMajor = None
         self.rightMajor = None
         self.minor = None
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, projection='3d')
-        self.ax.set_aspect('equal')
+        self.ax.axis('equal')
         pass
 
     def loadImage(self, image):
@@ -251,8 +252,8 @@ class ThreeSweep():
         return self.primitivePoints
 
     def plot3DArray(self,x):
-        #self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
-        #plt.show()
+        self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
+        plt.show()
         pass
 
     def updatePlot(self,points):
@@ -262,8 +263,23 @@ class ThreeSweep():
         plt.pause(0.0001)
         pass
 
+    def generateTriSurf(self):
+        def genEdges():
+            topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
+            topright = [[x, x + 1, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
+            return topleft + topright
+        points = self.objectPoints
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        plt.axis('equal')
+        ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = genEdges())
+        plt.axis('equal')
+        ax.axis('equal')
+        plt.show()
+
     def end(self):
-        self.plot3DArray(self.objectPoints)
+        # self.plot3DArray(self.objectPoints)
+        self.generateTriSurf()
         pass
     def createSTL(self):
         ''' takes the object points in order and creates pairs of triangles, writes to a file'''
