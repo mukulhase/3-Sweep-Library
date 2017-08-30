@@ -21,19 +21,15 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     objTransform->setScale(0.02f);
     objTransform->setTranslation(QVector3D(0.0f, 5.0f, 0.0f));
 
-    caoMaterial = new Qt3DExtras::QPhongMaterial();
-    caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
-
-    QFileInfo fil("/home/vikas/Dropbox/3sweep/3-Sweep/sketch/matlab_codes/testColbottle.stl");
-    Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
-    mesh->setSource(QUrl::fromLocalFile(fil.absoluteFilePath()));
+    objMaterial = new Qt3DExtras::QPhongMaterial();
+    objMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
 
     //Cuboid
-    m_cuboidEntity = new Qt3DCore::QEntity(m_rootEntity);
-    m_cuboidEntity->addComponent(mesh);
-    m_cuboidEntity->addComponent(caoMaterial);
-    m_cuboidEntity->addComponent(objTransform);
-    scene_entities.append(m_cuboidEntity);
+    m_objEntity = new Qt3DCore::QEntity(m_rootEntity);
+    m_objEntity->addComponent(cuboid);
+    m_objEntity->addComponent(objMaterial);
+    m_objEntity->addComponent(objTransform);
+    scene_entities.append(m_objEntity);
 
     planeEntity = new PlaneEntity(m_rootEntity);
     planeEntity->mesh()->setHeight(20.0f);
@@ -61,10 +57,17 @@ void SceneModifier::initData()
 
 void SceneModifier::loadImage(const QString &fileName)
 {
-//    if(m_cuboidEntity->isEnabled())
-//        m_cuboidEntity->setEnabled(false);
+//    if(m_objEntity->isEnabled())
+//        m_objEntity->setEnabled(false);
+    QStringList filepath = fileName.split('.');
+    qInfo() << filepath[0];
 
-    QFileInfo fil(fileName);
+    QFileInfo filmesh(filepath[0] + ".stl");
+    Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
+    mesh->setSource(QUrl::fromLocalFile(filmesh.absoluteFilePath()));
+    m_objEntity->addComponent(mesh);
+
+    QFileInfo fil(filepath[0] + ".png");
 
     Qt3DRender::QTextureImage *diffuseImage = new Qt3DRender::QTextureImage();
     diffuseImage->setSource(QUrl::fromLocalFile(fil.absoluteFilePath()));
@@ -109,49 +112,49 @@ bool SceneModifier::eventFilter(QObject *obj, QEvent *event)
             if (ke->key() == Qt::Key_Left)
             {
                 objTransform->setTranslation(objTransform->translation() + QVector3D(0.5f, 0.0f, 0.0f));
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_Right)
             {
                 objTransform->setTranslation(objTransform->translation() + QVector3D(-0.5f, 0.0f, 0.0f));
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_Up)
             {
                 objTransform->setTranslation(objTransform->translation() + QVector3D(0.0f, 0.0f, 0.5f));
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_Down)
             {
                 objTransform->setTranslation(objTransform->translation() + QVector3D(0.0f, 0.0f, -0.5f));
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_W)
             {
                 objTransform->setRotationX(objTransform->rotationX()+0.5f);
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_S)
             {
                 objTransform->setRotationX(objTransform->rotationX()-0.5f);
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_A)
             {
                 objTransform->setRotationY(objTransform->rotationY()-0.5f);
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             else if (ke->key() == Qt::Key_D)
             {
                 objTransform->setRotationY(objTransform->rotationY()+0.5f);
-                m_cuboidEntity->addComponent(objTransform);
+                m_objEntity->addComponent(objTransform);
                 return true;
             }
             break;

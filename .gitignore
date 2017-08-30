@@ -1,5 +1,7 @@
 # grabcut output
 grabcuted.png
+output.png
+output.stl
 *.pyc
 .idea/
 qt_3dviewer/app.pro.user

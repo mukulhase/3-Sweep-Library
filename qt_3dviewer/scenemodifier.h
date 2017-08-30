@@ -75,10 +75,10 @@ private:
 
     Qt3DCore::QEntity *m_rootEntity;
 
-    Qt3DCore::QEntity *m_cuboidEntity;
+    Qt3DCore::QEntity *m_objEntity;
     Qt3DCore::QTransform *objTransform;
 
-    Qt3DExtras::QPhongMaterial *caoMaterial;
+    Qt3DExtras::QPhongMaterial *objMaterial;
     QWidget *m_parentWidget;
 
     PlaneEntity *planeEntity ;
