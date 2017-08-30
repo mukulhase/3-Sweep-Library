@@ -34,7 +34,7 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
 
     PlaneEntity *planeEntity = new PlaneEntity(m_rootEntity);
     planeEntity->mesh()->setHeight(20.0f);
-    planeEntity->mesh()->setWidth(20.0f);
+    planeEntity->mesh()->setWidth(32.0f);
     planeEntity->mesh()->setMeshResolution(QSize(5, 5));
 
     Qt3DExtras::QNormalDiffuseSpecularMapMaterial *normalDiffuseSpecularMapMaterial = new Qt3DExtras::QNormalDiffuseSpecularMapMaterial();
