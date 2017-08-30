@@ -21,6 +21,7 @@
 #include <Qt3DExtras/QForwardRenderer>
 #include <Qt3DRender/QTextureImage>
 #include <Qt3DExtras/QDiffuseMapMaterial>
+#include <QNormalDiffuseSpecularMapMaterial>
 
 #include <Qt3DInput/QKeyboardHandler>
 
@@ -40,6 +41,8 @@
 #include <QLabel>
 #include <QPushButton>
 
+#include "planeentity.h"
+
 class SceneModifier : public QObject
 {
     Q_OBJECT
@@ -48,32 +51,38 @@ public:
     explicit SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget);
     ~SceneModifier();
 
-    QList<QVector3D>* cylinder;
+//    void keyPressEvent(QKeyEvent *event);
 
+    QList<QVector3D>* cylinder;
 
     QList<Qt3DCore::QEntity *> scene_entities;
     Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
 
 public slots:
+    void loadImage(const QString &fileName);
     void mouseControls(Qt3DInput::QKeyEvent *event);
     void removeSceneElements();
 
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
-
-    void createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
-                        const unsigned int index, const float radius, const QString &load_param);
-
     void initData();
 
 private:
     bool handleMousePress(QMouseEvent *event);
 
     Qt3DCore::QEntity *m_rootEntity;
+
     Qt3DCore::QEntity *m_cuboidEntity;
-    Qt3DCore::QEntity *m_cylinderEntity;
+    Qt3DCore::QTransform *objTransform;
+
     Qt3DExtras::QPhongMaterial *caoMaterial;
     QWidget *m_parentWidget;
+
+    PlaneEntity *planeEntity ;
+    Qt3DExtras::QNormalDiffuseSpecularMapMaterial *normalDiffuseSpecularMapMaterial;
 
     Qt::MouseButton m_mouseButton;
 

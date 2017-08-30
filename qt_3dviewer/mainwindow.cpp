@@ -32,10 +32,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::open()
 {
-    if (maybeSave()) {
+    if (maybeSave())
+    {
         QString fileName = QFileDialog::getOpenFileName(this);
         if (!fileName.isEmpty())
-            loadCaoFile(fileName);
+        {
+            modifier->loadImage(fileName);
+            setCurrentFile(fileName);
+            statusBar()->showMessage(tr("File loaded"), 2000);
+        }
     }
 }
 
@@ -89,9 +94,9 @@ void MainWindow::createActions()
     QToolBar *caoToolBar = addToolBar(tr("File"));
 
 
-    QAction *openAct = new QAction(QIcon(":/images/icon_import_cao.png"), tr("&Import ViSP .cao"), this);
+    QAction *openAct =  new QAction(QIcon::fromTheme("document-open", QIcon(":/images/open.png")), tr("&Load Image Diffuse"), this);//new QAction(QIcon(":/images/icon_import_cao.png"), tr("&Load "), this);
     openAct->setShortcuts(QKeySequence::Open);
-    openAct->setStatusTip(tr("Import a .cao file"));
+    openAct->setStatusTip(tr("Load Image Diffuse"));
     connect(openAct, &QAction::triggered, this, &MainWindow::open);
     caoMenu->addAction(openAct);
     caoToolBar->addAction(openAct);
@@ -180,7 +185,7 @@ bool MainWindow::maybeSave()
     return true;
 }
 
-void MainWindow::loadCaoFile(const QString &fileName)
+void MainWindow::loadDiffuseImage(const QString &fileName)
 {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -189,9 +194,6 @@ void MainWindow::loadCaoFile(const QString &fileName)
                              .arg(QDir::toNativeSeparators(fileName), file.errorString()));
         return;
     }
-
-    QTextStream in(&file);
-    // modifier->parse3DFile(in, useBlenderFrame);
 
     file.close();
 

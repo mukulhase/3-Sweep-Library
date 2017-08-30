@@ -360,7 +360,9 @@ class ScribbleArea(QtGui.QWidget):
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
 
-        img[np.where((img > [0, 0, 0]).all(axis=2))] = [255, 255, 255]
+        # img[np.where((img > [0, 0, 0]).all(axis=2))] = [255, 255, 255]
+        imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        ret,thresh = cv2.threshold(imgray,1,255,0)
 
         kernel = np.array([[0, 0, 1, 0, 0],
                            [0, 1, 1, 1, 0],
@@ -369,7 +371,7 @@ class ScribbleArea(QtGui.QWidget):
                            [0, 0, 1, 0, 0]], np.uint8)
 
         # Fill the mask.
-        obj_seg = cv2.morphologyEx(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), cv2.MORPH_CLOSE, kernel)
+        obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
         
         threesweep.image = obj_seg
         self.edges = threesweep.getEdges()

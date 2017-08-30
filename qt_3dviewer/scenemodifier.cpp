@@ -1,14 +1,13 @@
 
 #include "scenemodifier.h"
 
+#include <QtGui/QGuiApplication>
 #include <QtCore/QDebug>
 #include <QMaterial>
-#include <QNormalDiffuseSpecularMapMaterial>
 #include "planeentity.h"
 
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget)
     : m_rootEntity(rootEntity)
-    , m_cylinderEntity(nullptr)
     , m_parentWidget(parentWidget)
 {
 
@@ -18,44 +17,37 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     cuboid->setYZMeshResolution(QSize(2, 2));
     cuboid->setXZMeshResolution(QSize(2, 2));
     // CuboidMesh Transform
-    Qt3DCore::QTransform *cuboidTransform = new Qt3DCore::QTransform();
-    cuboidTransform->setScale(1.0f);
-    cuboidTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
+    objTransform = new Qt3DCore::QTransform();
+    objTransform->setScale(0.01f);
+    objTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
 
     caoMaterial = new Qt3DExtras::QPhongMaterial();
     caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
 
+    QFileInfo fil("/home/vikas/Dropbox/3sweep/3-Sweep/sketch/matlab_codes/testColbottle.stl");
+    Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
+    mesh->setSource(QUrl::fromLocalFile(fil.absoluteFilePath()));
+
     //Cuboid
     m_cuboidEntity = new Qt3DCore::QEntity(m_rootEntity);
-    m_cuboidEntity->addComponent(cuboid);
+    m_cuboidEntity->addComponent(mesh);
     m_cuboidEntity->addComponent(caoMaterial);
-    m_cuboidEntity->addComponent(cuboidTransform);
+    m_cuboidEntity->addComponent(objTransform);
     scene_entities.append(m_cuboidEntity);
 
-    PlaneEntity *planeEntity = new PlaneEntity(m_rootEntity);
+    planeEntity = new PlaneEntity(m_rootEntity);
     planeEntity->mesh()->setHeight(20.0f);
     planeEntity->mesh()->setWidth(32.0f);
     planeEntity->mesh()->setMeshResolution(QSize(5, 5));
 
-    Qt3DExtras::QNormalDiffuseSpecularMapMaterial *normalDiffuseSpecularMapMaterial = new Qt3DExtras::QNormalDiffuseSpecularMapMaterial();
+    normalDiffuseSpecularMapMaterial = new Qt3DExtras::QNormalDiffuseSpecularMapMaterial();
     normalDiffuseSpecularMapMaterial->setTextureScale(1.0f);
     normalDiffuseSpecularMapMaterial->setShininess(80.0f);
     normalDiffuseSpecularMapMaterial->setAmbient(QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f));
 
-    Qt3DRender::QTextureImage *diffuseImage = new Qt3DRender::QTextureImage();
-    diffuseImage->setSource(QUrl(QStringLiteral("qrc:/assets/textures/pattern_09/diffuse.webp")));
-    normalDiffuseSpecularMapMaterial->diffuse()->addTextureImage(diffuseImage);
-
-    Qt3DRender::QTextureImage *specularImage = new Qt3DRender::QTextureImage();
-    specularImage->setSource(QUrl(QStringLiteral("qrc:/assets/textures/pattern_09/specular.webp")));
-    normalDiffuseSpecularMapMaterial->specular()->addTextureImage(specularImage);
-
-//    Qt3DRender::QTextureImage *normalImage = new Qt3DRender::QTextureImage();
-//    normalImage->setSource(QUrl((QStringLiteral("qrc:/assets/textures/pattern_09/normal.webp"))));
-//    normalDiffuseSpecularMapMaterial->normal()->addTextureImage(normalImage);
-
-    planeEntity->addComponent(normalDiffuseSpecularMapMaterial);
     this->initData();
+
+    qGuiApp->installEventFilter(this);
 }
 
 SceneModifier::~SceneModifier()
@@ -67,31 +59,22 @@ void SceneModifier::initData()
     cylinder = new QList<QVector3D>();
 }
 
-void SceneModifier::createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
-                                   const unsigned int index, const float radius, const QString &lod_param)
+void SceneModifier::loadImage(const QString &fileName)
 {
-    QVector3D main_axis = axis_2 - axis_1;
-    QVector3D mid_point = (axis_1 + axis_2) / 2;
-    QVector3D main_axis_norm = main_axis.normalized();
+//    if(m_cuboidEntity->isEnabled())
+//        m_cuboidEntity->setEnabled(false);
 
-    Qt3DExtras::QCylinderMesh *cylinder = new Qt3DExtras::QCylinderMesh();
-    cylinder->setRadius(radius);
-    cylinder->setLength(qSqrt(qPow(main_axis[0],2) + qPow(main_axis[1],2) + qPow(main_axis[2],2)));
-    cylinder->setRings(100);
-    cylinder->setSlices(20);
+    QFileInfo fil(fileName);
 
-    // CylinderMesh Transform
-    Qt3DCore::QTransform *cylinderTransform = new Qt3DCore::QTransform();
-    QVector3D cylinderAxisRef(0, 1, 0);
-    cylinderTransform->setRotation(QQuaternion::rotationTo(cylinderAxisRef, main_axis_norm));
-    cylinderTransform->setTranslation(mid_point);
+    Qt3DRender::QTextureImage *diffuseImage = new Qt3DRender::QTextureImage();
+    diffuseImage->setSource(QUrl::fromLocalFile(fil.absoluteFilePath()));
+    normalDiffuseSpecularMapMaterial->diffuse()->addTextureImage(diffuseImage);
 
-    m_cylinderEntity = new Qt3DCore::QEntity(m_rootEntity);
-    m_cylinderEntity->addComponent(cylinder);
-    m_cylinderEntity->addComponent(caoMaterial);
-    m_cylinderEntity->addComponent(cylinderTransform);
+    Qt3DRender::QTextureImage *specularImage = new Qt3DRender::QTextureImage();
+    specularImage->setSource(QUrl(QStringLiteral("qrc:/assets/textures/pattern_09/specular.webp")));
+    normalDiffuseSpecularMapMaterial->specular()->addTextureImage(specularImage);
 
-    createObjectPickerForEntity(m_cylinderEntity);
+    planeEntity->addComponent(normalDiffuseSpecularMapMaterial);
 }
 
 Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::QEntity *entity)
@@ -112,6 +95,51 @@ void SceneModifier::removeSceneElements()
     }
     scene_entities.clear();
     this->initData();
+}
+
+
+bool SceneModifier::eventFilter(QObject *obj, QEvent *event)
+{
+    Q_UNUSED(obj)
+    switch (event->type())
+    {
+        case QEvent::KeyPress:
+        {
+            QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+            if (ke->key() == Qt::Key_Left)
+            {
+                objTransform->setTranslation(objTransform->translation() + QVector3D(0.5f, 0.0f, 0.0f));
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_Right)
+            {
+                objTransform->setTranslation(objTransform->translation() + QVector3D(-0.5f, 0.0f, 0.0f));
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_Up)
+            {
+                objTransform->setTranslation(objTransform->translation() + QVector3D(0.0f, 0.0f, 0.5f));
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_Down)
+            {
+                objTransform->setTranslation(objTransform->translation() + QVector3D(0.0f, 0.0f, -0.5f));
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            break;
+        }
+//    case QEvent::MouseButtonPress:
+//        break;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 
