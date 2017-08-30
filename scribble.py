@@ -8,6 +8,8 @@ sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
 import cv2
 import numpy as np
+import math
+from sympy import *
 
 from ThreeSweep import ThreeSweep
 from PyQt4 import QtCore, QtGui
@@ -59,7 +61,32 @@ class ScribbleArea(QtGui.QWidget):
             threesweep.setMajor(self.firstPoint, self.secondPoint)
             pass
         elif self.state == 'ThirdSweep':
-            
+            sweep1 = QtGui.QVector2D(self.firstPoint - self.secondPoint)
+            sweep2 = QtGui.QVector2D(self.thirdPoint - self.secondPoint)
+            cosine_angle = QtGui.QVector2D.dotProduct(sweep1,sweep2) / (sweep1.length() * sweep2.length())
+            angle = acos(cosine_angle)*180/math.pi
+            print angle
+            if angle < 60:
+                distance = (self.firstPoint - self.secondPoint)
+                center = (self.firstPoint + self.secondPoint) / 2
+                minor = (center - self.thirdPoint).y()
+                distance = (distance.x()) ** 2 + (distance.y()) ** 2
+                distance = distance ** 0.5
+                self.imagePainter.drawEllipse(center, distance / 2, minor)
+            else:
+                distance = (self.secondPoint - self.thirdPoint)
+                distance = (distance.x()) ** 2 + (distance.y()) ** 2
+                mag = distance ** 0.5
+
+                slope = (self.secondPoint.x() - self.thirdPoint.x()) / (self.secondPoint.y() - self.thirdPoint.y())
+                fourthPoint = QtCore.QPoint(self.firstPoint.x() + (mag * slope) / (slope ** 2 + 1) ** 0.5,
+                                            self.firstPoint.y() + mag / (slope ** 2 + 1) ** 0.5)
+
+                self.drawLineWithColor(self.firstPoint, self.secondPoint, temp=True)
+                self.drawLineWithColor(self.secondPoint, self.thirdPoint, temp=True)
+                self.drawLineWithColor(self.thirdPoint, fourthPoint, temp=True)
+                self.drawLineWithColor(fourthPoint, self.firstPoint, temp=True)
+
             threesweep.pickPrimitive()
             threesweep.setMinor(self.thirdPoint)
             self.setPenColor(QtCore.Qt.green)
@@ -259,7 +286,7 @@ class ScribbleArea(QtGui.QWidget):
         color = QtGui.QColor(255, 0, 0)
         color.setNamedColor('#d4d4d4')
         self.imagePainter.setPen(color)
-
+        print self.rectPoint1, self.rectPoint2
         # self.imagePainter.setBrush(QtGui.QColor(200, 0, 0))
         width = abs(self.rectPoint2.x()-self.rectPoint1.x())
         height = abs(self.rectPoint2.y()-self.rectPoint1.y())
@@ -332,11 +359,19 @@ class ScribbleArea(QtGui.QWidget):
 
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
-        # img[img != 0] = 255
-        imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-        ret,thresh = cv2.threshold(imgray,50,255,0)
+
+        img[np.where((img > [0, 0, 0]).all(axis=2))] = [255, 255, 255]
+
+        kernel = np.array([[0, 0, 1, 0, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 1, 1, 1, 1],
+                           [0, 1, 1, 1, 0],
+                           [0, 0, 1, 0, 0]], np.uint8)
+
+        # Fill the mask.
+        obj_seg = cv2.morphologyEx(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), cv2.MORPH_CLOSE, kernel)
         
-        threesweep.image = thresh
+        threesweep.image = obj_seg
         self.edges = threesweep.getEdges()
 
 class MainWindow(QtGui.QMainWindow):
