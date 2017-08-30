@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from sympy import *
 from sympy.geometry import *
+from stl import mesh
+
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
 
@@ -266,16 +268,24 @@ class ThreeSweep():
     def generateTriSurf(self):
         def genEdges():
             topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
-            topright = [[x, x + 1, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
+            topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
             return topleft + topright
         points = self.objectPoints
         fig = plt.figure()
         ax = fig.gca(projection='3d')
         plt.axis('equal')
-        ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = genEdges())
+        triangles = np.array(genEdges())
+        ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = triangles)
         plt.axis('equal')
         ax.axis('equal')
         plt.show()
+        ipdb.set_trace()
+        points = points[:,:-1]
+        cube = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
+        for i, f in enumerate(triangles):
+            for j in range(3):
+                cube.vectors[i][j] = points[int(floor(f[j])), :]
+        cube.save('lolol.stl')
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
