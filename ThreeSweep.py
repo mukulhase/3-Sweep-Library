@@ -51,7 +51,7 @@ class ThreeSweep():
     def loadImage(self, image):
         ''' Load image into module for processing '''
         self.filename = image
-        if type(image) is unicode or str:
+        if type(image) is unicode:
             self.image = cv2.imread(image,0)
         else:
             self.image = image
