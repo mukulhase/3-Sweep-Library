@@ -278,13 +278,13 @@ class ThreeSweep():
         plt.axis('equal')
         ax.axis('equal')
         plt.show()
-        ipdb.set_trace()
+        # ipdb.set_trace()
         points = points[:,:-1]
         cube = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
         for i, f in enumerate(triangles):
             for j in range(3):
                 cube.vectors[i][j] = points[int(floor(f[j])), :]
-        cube.save('lolol.stl')
+        cube.save('output.stl')
 
     def end(self):
         # self.plot3DArray(self.objectPoints)

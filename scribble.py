@@ -169,7 +169,7 @@ class ScribbleArea(QtGui.QWidget):
             minor = (center - event.pos()).y()
             distance = (distance.x()) ** 2 + (distance.y()) ** 2
             distance = distance ** 0.5
-            # self.imagePainter.drawEllipse(center, distance / 2, minor)
+            self.imagePainter.drawEllipse(center, distance / 2, minor)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.state == 'ThirdSweep':
@@ -375,7 +375,7 @@ class ScribbleArea(QtGui.QWidget):
         obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
         inpaint_mask = cv2.inpaint(img_org,obj_seg,15,cv2.INPAINT_TELEA)
-        cv2.imwrite('inpaint.png',inpaint_mask.astype('uint8'))
+        cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
 
         threesweep.image = obj_seg
         self.edges = threesweep.getEdges()
