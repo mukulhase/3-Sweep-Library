@@ -18,8 +18,8 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     cuboid->setXZMeshResolution(QSize(2, 2));
     // CuboidMesh Transform
     objTransform = new Qt3DCore::QTransform();
-    objTransform->setScale(0.01f);
-    objTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
+    objTransform->setScale(0.02f);
+    objTransform->setTranslation(QVector3D(0.0f, 5.0f, 0.0f));
 
     caoMaterial = new Qt3DExtras::QPhongMaterial();
     caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
@@ -127,6 +127,30 @@ bool SceneModifier::eventFilter(QObject *obj, QEvent *event)
             else if (ke->key() == Qt::Key_Down)
             {
                 objTransform->setTranslation(objTransform->translation() + QVector3D(0.0f, 0.0f, -0.5f));
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_W)
+            {
+                objTransform->setRotationX(objTransform->rotationX()+0.5f);
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_S)
+            {
+                objTransform->setRotationX(objTransform->rotationX()-0.5f);
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_A)
+            {
+                objTransform->setRotationY(objTransform->rotationY()-0.5f);
+                m_cuboidEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_D)
+            {
+                objTransform->setRotationY(objTransform->rotationY()+0.5f);
                 m_cuboidEntity->addComponent(objTransform);
                 return true;
             }

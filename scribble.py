@@ -347,7 +347,8 @@ class ScribbleArea(QtGui.QWidget):
                     return qim.copy() if copy else qim
 
     def grabCut(self):
-        img = cv2.imread(self.imagePath)
+        img_org = cv2.imread(self.imagePath)
+        img = img_org
         mask = np.zeros(img.shape[:2], np.uint8)
         bgdModel = np.zeros((1, 65), np.float64)
         fgdModel = np.zeros((1, 65), np.float64)
@@ -372,7 +373,10 @@ class ScribbleArea(QtGui.QWidget):
 
         # Fill the mask.
         obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-        
+
+        inpaint_mask = cv2.inpaint(img_org,obj_seg,15,cv2.INPAINT_TELEA)
+        cv2.imwrite('inpaint.png',inpaint_mask.astype('uint8'))
+
         threesweep.image = obj_seg
         self.edges = threesweep.getEdges()
 
