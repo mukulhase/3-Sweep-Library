@@ -83,6 +83,7 @@ private:
 
     PlaneEntity *planeEntity ;
     Qt3DExtras::QNormalDiffuseSpecularMapMaterial *normalDiffuseSpecularMapMaterial;
+    Qt3DExtras::QNormalDiffuseSpecularMapMaterial *objectMaterial;
 
     Qt::MouseButton m_mouseButton;
 

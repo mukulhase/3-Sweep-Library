@@ -41,6 +41,11 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     normalDiffuseSpecularMapMaterial->setShininess(80.0f);
     normalDiffuseSpecularMapMaterial->setAmbient(QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f));
 
+    objectMaterial = new Qt3DExtras::QNormalDiffuseSpecularMapMaterial();
+    objectMaterial->setTextureScale(1.0f);
+    objectMaterial->setShininess(80.0f);
+    objectMaterial->setAmbient(QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f));
+
     this->initData();
 
     qGuiApp->installEventFilter(this);
@@ -64,8 +69,14 @@ void SceneModifier::loadImage(const QString &fileName)
 
     QFileInfo filmesh(filepath[0] + ".stl");
     Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
+//    mesh->setSource(QUrl::fromLocalFile("/home/vikas/Documents/WebGL/three.js/examples/models/ply/ascii/dolphins_colored.obj"));
     mesh->setSource(QUrl::fromLocalFile(filmesh.absoluteFilePath()));
     m_objEntity->addComponent(mesh);
+
+//    Qt3DRender::QTextureImage *Texture = new Qt3DRender::QTextureImage();
+//    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/inputs/dice.jpg"));
+//    objectMaterial->diffuse()->addTextureImage(Texture);
+//    m_objEntity->addComponent(objectMaterial);
 
     QFileInfo fil(filepath[0] + ".png");
 
@@ -154,6 +165,18 @@ bool SceneModifier::eventFilter(QObject *obj, QEvent *event)
             else if (ke->key() == Qt::Key_D)
             {
                 objTransform->setRotationY(objTransform->rotationY()+0.5f);
+                m_objEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_Z)
+            {
+                objTransform->setScale(objTransform->scale()+0.005f);
+                m_objEntity->addComponent(objTransform);
+                return true;
+            }
+            else if (ke->key() == Qt::Key_X)
+            {
+                objTransform->setScale(objTransform->scale()-0.005f);
                 m_objEntity->addComponent(objTransform);
                 return true;
             }
