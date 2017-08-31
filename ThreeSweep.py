@@ -6,12 +6,36 @@ import matplotlib.animation as animation
 from sympy import *
 from sympy.geometry import *
 from stl import mesh
-import pymesh
+# import pymesh
 import time
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
 import threading
 matplotlib.interactive = True
+
+
+TEMPLATE_PLY_FILE = u"""\
+{
+ply,
+format ascii 1.0,
+comment VCGLIB generated,
+element vertex %(nPoints)d,
+property float x,
+property float y,
+property float z,
+property uchar red,
+property uchar green,
+property uchar blue,
+property uchar alpha,
+element face %(nFacepoints)d,
+property list uchar int vertex_indices,
+end_header,
+[%(points)s],
+[%(facepoints)s]
+}
+"""
+TEMPLATE_VERTEX = "%f %f %f %d %d %d %d"
+TEMPLATE_FACES = "%d %d %d %d"
 
 def getPoint(point):
     if type(point) == list:
@@ -284,6 +308,13 @@ class ThreeSweep():
             topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
             topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
             return topleft + topright
+
+        def generate_vertices(v):
+            return  TEMPLATE_VERTEX % (v[0], v[1], v[2], 255, 0, 255, 255) # put colors where
+
+        def generate_faces(f):
+            return  TEMPLATE_FACES % (3, f[0], f[1], f[2])
+
         points = self.objectPoints
         fig = plt.figure()
         ax = fig.gca(projection='3d')
@@ -292,10 +323,10 @@ class ThreeSweep():
         ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = triangles)
         plt.axis('equal')
         ax.axis('equal')
-        plt.show()
-        vertices = points[:,:-1]
-        points = vertices
-        faces = triangles
+        # plt.show()
+        # vertices = points[:,:-1]
+        # points = vertices
+        # faces = triangles
         # mesh = pymesh.form_mesh(vertices, faces)
         # novertices = np.shape(vertices)[0]
         # vertex_colors = [
@@ -312,6 +343,20 @@ class ThreeSweep():
             for j in range(3):
                 cube.vectors[i][j] = points[int(floor(f[j])), :]
         cube.save('output.stl')
+
+        text = TEMPLATE_PLY_FILE % {
+            "nPoints"  : points.shape[0],
+            "nFacepoints" : triangles.shape[0],
+            "points" : "\n".join(generate_vertices(v) for v in points),
+            "facepoints" : "\n".join(generate_faces(f) for f in triangles)
+        }
+
+        text = text.replace(',', '').replace('{', '').replace('}', '').replace('{', '').replace('[', '').replace(']', '')
+        text = "".join([s for s in text.strip().splitlines(True) if s.strip()])
+
+        f = open("output.ply", "w")
+        f.write(text)
+        f.close()
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
