@@ -62,7 +62,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.near_   = 0.1
         self.far_    = 100.0
         self.fovy_   = 45.0
-        self.radius_ = 5.0
+        self.radius_ = 30.0
         self.last_point_2D_ = QtCore.QPoint()
         self.last_point_ok_ = False
         self.last_point_3D_ = [1.0, 0.0, 0.0]

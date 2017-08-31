@@ -30,7 +30,6 @@ def auto_canny(image, sigma=0.33):
     lower = int(max(0, (1.0 - sigma) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edged = cv2.Canny(image, lower, upper)
-
     # return the edged image
     return edged
 
@@ -187,7 +186,7 @@ class ThreeSweep():
             self.objectPoints = np.concatenate((self.objectPoints,np.transpose(affineTrans)), axis=0)
         else:
             self.objectPoints = np.transpose(affineTrans)
-        self.updatePlot(np.transpose(affineTrans))
+        # self.updatePlot(np.transpose(affineTrans))
 
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
@@ -306,11 +305,13 @@ class ThreeSweep():
         # ]
         # mesh.add_attribute("vertex_color", vertex_colors)
         # pymesh.save_mesh("filename.ply", mesh)
+        # ipdb.set_trace()
+        points = points[:,:-1]
         cube = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
         for i, f in enumerate(triangles):
             for j in range(3):
                 cube.vectors[i][j] = points[int(floor(f[j])), :]
-        cube.save('lolol.stl')
+        cube.save('output.stl')
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
