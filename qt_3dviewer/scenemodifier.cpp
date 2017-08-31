@@ -67,14 +67,14 @@ void SceneModifier::loadImage(const QString &fileName)
     QStringList filepath = fileName.split('.');
     qInfo() << filepath[0];
 
-    QFileInfo filmesh(filepath[0] + ".stl");
+    QFileInfo filmesh(filepath[0] + ".ply");
     Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
 //    mesh->setSource(QUrl::fromLocalFile("/home/vikas/Documents/WebGL/three.js/examples/models/ply/ascii/dolphins_colored.obj"));
     mesh->setSource(QUrl::fromLocalFile(filmesh.absoluteFilePath()));
     m_objEntity->addComponent(mesh);
 
 //    Qt3DRender::QTextureImage *Texture = new Qt3DRender::QTextureImage();
-//    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/inputs/dice.jpg"));
+//    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/output_color.png"));
 //    objectMaterial->diffuse()->addTextureImage(Texture);
 //    m_objEntity->addComponent(objectMaterial);
 

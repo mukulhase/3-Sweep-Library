@@ -7,6 +7,7 @@ from sympy import *
 from sympy.geometry import *
 from stl import mesh
 # import pymesh
+from random import randint
 import time
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
@@ -310,7 +311,7 @@ class ThreeSweep():
             return topleft + topright
 
         def generate_vertices(v):
-            return  TEMPLATE_VERTEX % (v[0], v[1], v[2], 255, 0, 255, 255) # put colors where
+            return  TEMPLATE_VERTEX % (v[0], v[1], v[2], randint(0, 255), randint(0, 255), randint(0, 255), 255) # put colors where
 
         def generate_faces(f):
             return  TEMPLATE_FACES % (3, f[0], f[1], f[2])
