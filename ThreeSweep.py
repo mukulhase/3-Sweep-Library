@@ -1,14 +1,17 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import matplotlib.animation as animation
 from sympy import *
 from sympy.geometry import *
 from stl import mesh
-
+import pymesh
+import time
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
-
+import threading
+matplotlib.interactive = True
 
 def getPoint(point):
     if type(point) == list:
@@ -49,6 +52,7 @@ class ThreeSweep():
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.axis('equal')
+        self.ax.set_zlim3d(-10e-9, 10e9)
         pass
 
     def loadImage(self, image):
@@ -259,9 +263,20 @@ class ThreeSweep():
 
     def updatePlot(self,points):
         #background = fig.canvas.copy_from_bbox(ax.bbox)
-        self.ax.plot(points[:,0],points[:,1],points[:,2])
-        plt.draw()
-        plt.pause(0.0001)
+        def genEdges():
+            topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
+            topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
+            return topleft + topright
+
+        points = self.objectPoints
+        ax = self.fig.gca(projection='3d')
+        triangles = np.array(genEdges())
+        # if 'surf' in self:
+        #     self.surf.remove()
+        #self.surf = ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=triangles)
+        #plt.draw()
+        #plt.pause(0.0001)
+        ##self.ax.plot(points[:,0],points[:,1],points[:,2])
         pass
 
     def generateTriSurf(self):
@@ -278,6 +293,18 @@ class ThreeSweep():
         plt.axis('equal')
         ax.axis('equal')
         plt.show()
+        vertices = points[:,:-1]
+        points = vertices
+        faces = triangles
+        # mesh = pymesh.form_mesh(vertices, faces)
+        # novertices = np.shape(vertices)[0]
+        # vertex_colors = [
+        #     [num/novertices for num in range(novertices)],
+        #     [(novertices - num) / novertices for num in range(novertices)],
+        #     [num / novertices for num in range(novertices)],
+        # ]
+        # mesh.add_attribute("vertex_color", vertex_colors)
+        # pymesh.save_mesh("filename.ply", mesh)
         # ipdb.set_trace()
         points = points[:,:-1]
         cube = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
