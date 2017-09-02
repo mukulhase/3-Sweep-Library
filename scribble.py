@@ -378,6 +378,7 @@ class ScribbleArea(QtGui.QWidget):
         cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
 
         threesweep.image = obj_seg
+        threesweep.loadedimage = img_org
         self.edges = threesweep.getEdges()
 
 class MainWindow(QtGui.QMainWindow):

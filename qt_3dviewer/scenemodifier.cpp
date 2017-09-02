@@ -73,12 +73,13 @@ void SceneModifier::loadImage(const QString &fileName)
     mesh->setSource(QUrl::fromLocalFile(filmesh.absoluteFilePath()));
     m_objEntity->addComponent(mesh);
 
-//    Qt3DRender::QTextureImage *Texture = new Qt3DRender::QTextureImage();
-//    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/output_color.png"));
-//    objectMaterial->diffuse()->addTextureImage(Texture);
-//    m_objEntity->addComponent(objectMaterial);
+    Qt3DRender::QTextureImage *Texture = new Qt3DRender::QTextureImage();
+    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/output_color.png"));
+    objectMaterial->diffuse()->addTextureImage(Texture);
+    m_objEntity->addComponent(objectMaterial);
 
     QFileInfo fil(filepath[0] + ".png");
+    QImage *background = new QImage(fil.absoluteFilePath());
 
     Qt3DRender::QTextureImage *diffuseImage = new Qt3DRender::QTextureImage();
     diffuseImage->setSource(QUrl::fromLocalFile(fil.absoluteFilePath()));
@@ -88,6 +89,8 @@ void SceneModifier::loadImage(const QString &fileName)
     specularImage->setSource(QUrl(QStringLiteral("qrc:/assets/textures/pattern_09/specular.webp")));
     normalDiffuseSpecularMapMaterial->specular()->addTextureImage(specularImage);
 
+    planeEntity->mesh()->setHeight(20.0f);
+    planeEntity->mesh()->setWidth(20.0f*background->width()/background->height());
     planeEntity->addComponent(normalDiffuseSpecularMapMaterial);
 }
 

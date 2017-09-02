@@ -7,6 +7,7 @@ from sympy import *
 from sympy.geometry import *
 from stl import mesh
 # import pymesh
+import random
 from random import randint
 import time
 from mpl_toolkits.mplot3d import Axes3D
@@ -63,9 +64,11 @@ class ThreeSweep():
 
     def __init__(self):
         self.image = None
+        self.loadedimage = None
         self.leftContour = []
         self.rightContour = []
         self.objectPoints = np.array([])
+        self.colorIndices = []
         self.sweepPoints = []
         self.primitivePoints = []
         self.axisResolution = 10
@@ -266,12 +269,37 @@ class ThreeSweep():
                 return [foundleft, foundright]
             pass
 
+        def getallPoints(p1,p2):
+            ''' Get 20 points between p1 and p2'''
+            line = []
+            x0 = int(p1.x)
+            y0 = int(p1.y)
+            x1 = int(p2.x)
+            y1 = int(p2.y)
+
+            dx = x1 - x0
+            dy = y1 - y0
+            D = 2 * dy - dx
+            y = y0
+            for x in range(x0,x1+1):
+                line.append([x,y])
+                if D > 0:
+                    y = y + 1
+                    D = D - 2* dx
+                D = D + 2 * dy
+
+            if len(line) > self.primitiveDensity / 2:
+                return random.sample(line, self.primitiveDensity / 2)
+            else:
+                return line
+
         point = getPoint(point)
         direction = point - self.sweepPoints[-1]
         newPoints = detectBoundaryPoints(point, direction, self.leftContour[-1], self.rightContour[-1])
         self.sweepPoints.append(point)
         self.leftContour.append(newPoints[0])
         self.rightContour.append(newPoints[1])
+        self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
         self.update3DPoints(newPoints)
 
     def pickPrimitive(self):
@@ -310,11 +338,23 @@ class ThreeSweep():
             topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
             return topleft + topright
 
-        def generate_vertices(v):
-            return  TEMPLATE_VERTEX % (v[0], v[1], v[2], randint(0, 255), randint(0, 255), randint(0, 255), 255) # put colors where
+        def generate_vertices(i, points):
+            v = points[i]
+            if i / self.primitiveDensity < len(self.colorIndices):
+                layer = self.colorIndices[i / self.primitiveDensity]
+            else:
+                layer = self.colorIndices[len(self.colorIndices) - 1]
+
+            if len(layer) > 0:    
+                cidx = (i % self.primitiveDensity) % len(layer)
+                color = self.loadedimage[layer[cidx][1],layer[cidx][0]]
+            else:
+                color = [0,0,0]
+            #                                       color[0] = B color[1] = G color[2] = R
+            return TEMPLATE_VERTEX % (v[0], v[1], v[2], color[2], color[1], color[0], 255) # put colors where
 
         def generate_faces(f):
-            return  TEMPLATE_FACES % (3, f[0], f[1], f[2])
+            return TEMPLATE_FACES % (3, f[0], f[1], f[2])
 
         points = self.objectPoints
         fig = plt.figure()
@@ -348,7 +388,7 @@ class ThreeSweep():
         text = TEMPLATE_PLY_FILE % {
             "nPoints"  : points.shape[0],
             "nFacepoints" : triangles.shape[0],
-            "points" : "\n".join(generate_vertices(v) for v in points),
+            "points" : "\n".join(generate_vertices(i, points) for i in range(0,points.shape[0])),
             "facepoints" : "\n".join(generate_faces(f) for f in triangles)
         }
 
