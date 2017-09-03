@@ -42,7 +42,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
 
-    void loadDiffuseImage(const QString &fileName);
+    void loadPLY(const QString &fileName);
     SceneModifier *modifier;
     Qt3DRender::QCamera *cameraEntity;
 

@@ -271,27 +271,28 @@ class ThreeSweep():
 
         def getallPoints(p1,p2):
             ''' Get 20 points between p1 and p2'''
-            line = []
             x0 = int(p1.x)
             y0 = int(p1.y)
             x1 = int(p2.x)
             y1 = int(p2.y)
 
-            dx = x1 - x0
-            dy = y1 - y0
-            D = 2 * dy - dx
-            y = y0
-            for x in range(x0,x1+1):
-                line.append([x,y])
-                if D > 0:
-                    y = y + 1
-                    D = D - 2* dx
-                D = D + 2 * dy
+            # dx = x1 - x0
+            # dy = y1 - y0
+            # D = 2 * dy - dx
+            # y = y0
+            # for x in range(x0,x1+1):
+            #     line.append([x,y])
+            #     if D > 0:
+            #         y = y + 1
+            #         D = D - 2* dx
+            #     D = D + 2 * dy
 
-            if len(line) > self.primitiveDensity / 2:
-                return random.sample(line, self.primitiveDensity / 2)
-            else:
-                return line
+            # if len(line) > self.primitiveDensity / 2:
+            #     return random.sample(line, self.primitiveDensity / 2)
+            # else:
+            #     return line
+            line = [[(x0+x1)/2,y0]]*20
+            return line
 
         point = getPoint(point)
         direction = point - self.sweepPoints[-1]
@@ -340,12 +341,12 @@ class ThreeSweep():
 
         def generate_vertices(i, points):
             v = points[i]
-            if i / self.primitiveDensity < len(self.colorIndices):
+            if (i / self.primitiveDensity) < len(self.colorIndices):
                 layer = self.colorIndices[i / self.primitiveDensity]
             else:
                 layer = self.colorIndices[len(self.colorIndices) - 1]
 
-            if len(layer) > 0:    
+            if len(layer) > 0:
                 cidx = (i % self.primitiveDensity) % len(layer)
                 color = self.loadedimage[layer[cidx][1],layer[cidx][0]]
             else:

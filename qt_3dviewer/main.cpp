@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
 //    cameraEntity->setProjectionType(Qt3DRender::QCameraLens::PerspectiveProjection);
     mainWin.cameraEntity->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
-    mainWin.cameraEntity->setPosition(QVector3D(0.0f, 27.0f, -0.5f));
+    mainWin.cameraEntity->setPosition(QVector3D(0.0f, 24.0f, -0.5f));
     mainWin.cameraEntity->setUpVector(QVector3D(0, 1, 0));
     mainWin.cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 

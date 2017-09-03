@@ -39,6 +39,7 @@ void MainWindow::open()
         {
             modifier->loadImage(fileName);
             setCurrentFile(fileName);
+            loadPLY(fileName);
             statusBar()->showMessage(tr("File loaded"), 2000);
         }
     }
@@ -185,7 +186,7 @@ bool MainWindow::maybeSave()
     return true;
 }
 
-void MainWindow::loadDiffuseImage(const QString &fileName)
+void MainWindow::loadPLY(const QString &fileName)
 {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -194,6 +195,9 @@ void MainWindow::loadDiffuseImage(const QString &fileName)
                              .arg(QDir::toNativeSeparators(fileName), file.errorString()));
         return;
     }
+
+    QTextStream in(&file);
+    modifier->parsePLY(in);
 
     file.close();
 
@@ -209,8 +213,8 @@ void MainWindow::setCurrentFile(const QString &fileName)
 
     QString shownName = curFile;
     if (curFile.isEmpty())
-        shownName = "untitled.cao";
-    setWindowFilePath("ViSP CAO Editor - " + shownName);
+        shownName = "untitled.ply";
+    setWindowFilePath(" - " + shownName);
 }
 
 

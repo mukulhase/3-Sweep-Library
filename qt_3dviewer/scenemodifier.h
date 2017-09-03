@@ -51,15 +51,12 @@ public:
     explicit SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget);
     ~SceneModifier();
 
-//    void keyPressEvent(QKeyEvent *event);
 
-    QList<QVector3D>* cylinder;
-
-    QList<Qt3DCore::QEntity *> scene_entities;
     Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
 
 public slots:
     void loadImage(const QString &fileName);
+    void parsePLY(QTextStream &input);
     void mouseControls(Qt3DInput::QKeyEvent *event);
     void removeSceneElements();
 
@@ -69,16 +66,19 @@ protected:
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
     void initData();
+    void createTriangles(QVector3D v0, QVector3D color1, QVector3D v1, QVector3D color2, QVector3D v2, QVector3D color3);
+    bool applyTranslations(const QVector3D trans);
 
 private:
     bool handleMousePress(QMouseEvent *event);
 
     Qt3DCore::QEntity *m_rootEntity;
 
+//    Qt3DCore::QEntity *m_customEntity;
     Qt3DCore::QEntity *m_objEntity;
     Qt3DCore::QTransform *objTransform;
-
     Qt3DExtras::QPhongMaterial *objMaterial;
+
     QWidget *m_parentWidget;
 
     PlaneEntity *planeEntity ;
@@ -87,6 +87,11 @@ private:
 
     Qt::MouseButton m_mouseButton;
 
+    QList<QVector3D>* vertices;
+    QList<QVector3D>* colors;
+
+    QList<Qt3DCore::QEntity *> scene_entities;
+    QList<Qt3DCore::QTransform *> scene_entities_trans;
 
 };
 
