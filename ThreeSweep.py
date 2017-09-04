@@ -72,7 +72,7 @@ class ThreeSweep():
         self.sweepPoints = []
         self.primitivePoints = []
         self.axisResolution = 10
-        self.primitiveDensity = 20
+        self.primitiveDensity = 10000
         self.gradient = None
         self.leftMajor = None
         self.rightMajor = None
@@ -216,6 +216,36 @@ class ThreeSweep():
             self.objectPoints = np.transpose(affineTrans)
         # self.updatePlot(np.transpose(affineTrans))
 
+    def getallPoints(self, p1, p2):
+        ''' Get 20 points between p1 and p2'''
+        line = []
+        x0 = int(p1.x)
+        y0 = int(p1.y)
+        x1 = int(p2.x)
+        y1 = int(p2.y)
+        # return [[(x0+x1)/2, (y0+y1)/2]] * self.primitiveDensity
+
+        dx = x1 - x0
+        dy = y1 - y0
+        D = 2 * dy - dx
+        y = y0
+        for x in range(x0, x1 + 1):
+            line.append([x, y])
+            if D > 0:
+                y = y + 1
+                D = D - 2 * dx
+            D = D + 2 * dy
+        if len(line) > 1:
+            line = np.array(line)
+            interpolated1 = np.interp(np.linspace(0, len(line), self.primitiveDensity / 2),
+                                      np.linspace(0, len(line) - 1, len(line)), line[:, 0])
+            interpolated2 = np.interp(np.linspace(0, len(line), self.primitiveDensity / 2),
+                                      np.linspace(0, len(line) - 1, len(line)), line[:, 1])
+            interpolated = np.array([interpolated1, interpolated2], dtype=int)
+            return np.transpose(interpolated).tolist() * 2
+        else:
+            return [[x0, y0]] * self.primitiveDensity
+
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
 
@@ -223,6 +253,7 @@ class ThreeSweep():
             ''' Detect points on the boundary '''
 
             def searchOut(point, slope, inv=False, k=1):
+                ray = =
                 if inv:
                     k = -k
                 try:
@@ -244,6 +275,8 @@ class ThreeSweep():
                         return searchOut(point, slope, False, k + 1)
                     else:
                         return searchOut(point, slope, True, k)
+
+
 
             # offset by axis offset
             left += slope
@@ -269,30 +302,6 @@ class ThreeSweep():
                 return [foundleft, foundright]
             pass
 
-        def getallPoints(p1,p2):
-            ''' Get 20 points between p1 and p2'''
-            x0 = int(p1.x)
-            y0 = int(p1.y)
-            x1 = int(p2.x)
-            y1 = int(p2.y)
-
-            # dx = x1 - x0
-            # dy = y1 - y0
-            # D = 2 * dy - dx
-            # y = y0
-            # for x in range(x0,x1+1):
-            #     line.append([x,y])
-            #     if D > 0:
-            #         y = y + 1
-            #         D = D - 2* dx
-            #     D = D + 2 * dy
-
-            # if len(line) > self.primitiveDensity / 2:
-            #     return random.sample(line, self.primitiveDensity / 2)
-            # else:
-            #     return line
-            line = [[(x0+x1)/2,y0]]*20
-            return line
 
         point = getPoint(point)
         direction = point - self.sweepPoints[-1]
@@ -300,8 +309,8 @@ class ThreeSweep():
         self.sweepPoints.append(point)
         self.leftContour.append(newPoints[0])
         self.rightContour.append(newPoints[1])
-        self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
-        self.update3DPoints(newPoints)
+        # self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
+        #self.update3DPoints(newPoints)
 
     def pickPrimitive(self):
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
@@ -402,6 +411,9 @@ class ThreeSweep():
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
+        for i in range(len(self.leftContour)):
+            self.colorIndices.append(self.getallPoints(self.leftContour[i],self.rightContour[i]))
+            self.update3DPoints([self.leftContour[i],self.rightContour[i]])
         self.generateTriSurf()
         pass
     def createSTL(self):

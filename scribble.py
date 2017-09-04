@@ -54,6 +54,7 @@ class ScribbleArea(QtGui.QWidget):
         if state == 'Start':
             pass
         elif self.state == 'FirstSweep':
+            self.edges = threesweep.getEdges()
             self.setPenColor(QtCore.Qt.blue)
             pass
         elif self.state == 'SecondSweep':
@@ -102,8 +103,8 @@ class ScribbleArea(QtGui.QWidget):
         self.imagePath = fileName
         newSize = loadedImage.size()
         self.resize(newSize)
-        ##newSize = loadedImage.size().expandedTo(self.size())
-        ##self.resizeImage(loadedImage, newSize)
+        newSize = loadedImage.size().expandedTo(self.size())
+        self.resizeImage(loadedImage, newSize)
         self.image = loadedImage
         self.modified = False
         self.stateUpdate('Start')
@@ -155,9 +156,9 @@ class ScribbleArea(QtGui.QWidget):
             global last_time
             if not last_time:
                 last_time = time.time()
-            if (time.time() - last_time) > 0.1:
+            if (time.time() - last_time) > 1:
                 last_time = time.time()
-            self.contourPointsOverlay()
+                self.contourPointsOverlay()
 
         if self.state == 'FirstSweep':
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
@@ -379,7 +380,6 @@ class ScribbleArea(QtGui.QWidget):
 
         threesweep.image = obj_seg
         threesweep.loadedimage = img_org
-        self.edges = threesweep.getEdges()
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -406,9 +406,9 @@ class MainWindow(QtGui.QMainWindow):
                                                          QtCore.QDir.currentPath())
             if fileName:
                 self.scribbleArea.openImage(fileName)
-                # threesweep.loadImage(fileName)
-                # self.scribbleArea.edges = threesweep.getEdges()
-
+                image = cv2.imread(fileName)
+                threesweep.loadImage(image)
+                threesweep.loadedimage = image
 
     def save(self):
         action = self.sender()
