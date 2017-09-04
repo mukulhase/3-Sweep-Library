@@ -17,6 +17,12 @@ from PyQt4.QtGui import qRgb, QImage
 
 threesweep = ThreeSweep()
 last_time = None
+import shelve
+
+d = shelve.open('config.dat') # open -- file may get suffix added by low-level
+                          # library
+
+
 
 class NotImplementedException:
     pass
@@ -156,9 +162,9 @@ class ScribbleArea(QtGui.QWidget):
             global last_time
             if not last_time:
                 last_time = time.time()
-            if (time.time() - last_time) > 1:
+            if (time.time() - last_time) > 0.1:
                 last_time = time.time()
-                self.contourPointsOverlay()
+            self.contourPointsOverlay()
 
         if self.state == 'FirstSweep':
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
@@ -396,19 +402,31 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         if self.maybeSave():
+            d.close()
             event.accept()
         else:
             event.ignore()
 
-    def open(self):
+    def open(self, fname = None):
+        print fname
+        fileName = ""
         if self.maybeSave():
-            fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File",
+            if not fname:
+                fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File",
                                                          QtCore.QDir.currentPath())
+            else:
+                fileName = fname
+                pass
             if fileName:
                 self.scribbleArea.openImage(fileName)
                 image = cv2.imread(fileName)
                 threesweep.loadImage(image)
                 threesweep.loadedimage = image
+                d['lastopened'] = fileName
+
+    def openLast(self):
+        if 'lastopened' in d:
+            self.open(fname= d['lastopened'])
 
     def save(self):
         action = self.sender()
@@ -445,7 +463,8 @@ class MainWindow(QtGui.QMainWindow):
     def createActions(self):
         self.openAct = QtGui.QAction("&Open...", self, shortcut="Ctrl+O",
                                      triggered=self.open)
-
+        self.openRecentAct = QtGui.QAction("&Open Recent...", self, shortcut="Ctrl+Shift+O",
+                                     triggered=self.openLast)
         for format in QtGui.QImageWriter.supportedImageFormats():
             format = str(format)
 
@@ -491,6 +510,7 @@ class MainWindow(QtGui.QMainWindow):
 
         fileMenu = QtGui.QMenu("&File", self)
         fileMenu.addAction(self.openAct)
+        fileMenu.addAction(self.openRecentAct)
         fileMenu.addMenu(self.saveAsMenu)
         fileMenu.addAction(self.printAct)
         fileMenu.addSeparator()

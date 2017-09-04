@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import matplotlib.animation as animation
 from sympy import *
 from sympy.geometry import *
 from stl import mesh
@@ -12,7 +11,6 @@ from random import randint
 import time
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
-import threading
 matplotlib.interactive = True
 
 
@@ -81,6 +79,7 @@ class ThreeSweep():
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.axis('equal')
         self.ax.set_zlim3d(-10e-9, 10e9)
+        self.tolerance = 70
         pass
 
     def loadImage(self, image):
@@ -252,36 +251,31 @@ class ThreeSweep():
         def detectBoundaryPoints(axisPoint, slope, left, right):
             ''' Detect points on the boundary '''
 
+            def gaussian(x, mu, sig):
+                return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+
+            ## weights for distance of points
+            weights = np.linspace(0,1,self.tolerance)
+            weights = np.append(weights,(1 - weights))
+            print weights
+
             def searchOut(point, slope, inv=False, k=1):
-                ray = =
-                if inv:
-                    k = -k
-                try:
-                    if (slope > 1):
-                        temp = point + Point(k * slope, k * 1)
-                    else:
-                        temp = point + Point(k * 1, k * slope)
-                except:
-                    return
-                if inv:
-                    k = -k
-                index = roundPoint(temp)
-                if k > 35:
-                    return None
-                if (self.gradient[index[1]][index[0]] > 0):
-                    return temp
+                time.sleep(0.01)
+                if (slope > 1):
+                    rayx = np.linspace(float(point[0] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
+                    rayy = np.linspace(float(point[0] - self.tolerance), float(point[1] + self.tolerance), self.tolerance * 2, dtype=int)
                 else:
-                    if inv:
-                        return searchOut(point, slope, False, k + 1)
-                    else:
-                        return searchOut(point, slope, True, k)
-
-
+                    rayy = np.linspace(float(point[1] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
+                    rayx = np.linspace(float(point[0] - self.tolerance), float(point[0] + self.tolerance), self.tolerance * 2, dtype=int)
+                values = self.gradient[rayy, rayx]
+                values = values*weights
+                index = np.argmax(values)
+                if(values[index] != 0):
+                    return Point(rayx[np.argmax(values)],rayy[np.argmax(values)])
 
             # offset by axis offset
             left += slope
             right += slope
-
             # store as datatype
             left = Point(left)
             right = Point(right)
@@ -294,8 +288,8 @@ class ThreeSweep():
             slopeRight = slopeRight.y / slopeRight.x
 
             # search for contour points
-            foundleft = searchOut(left, slopeLeft)
-            foundright = searchOut(right, slopeRight)
+            foundleft = searchOut([left.x, left.y], slopeLeft)
+            foundright = searchOut([right.x, right.y], slopeRight)
             if (foundleft == None) or (foundright == None):
                 return [left, right]
             else:
@@ -310,7 +304,7 @@ class ThreeSweep():
         self.leftContour.append(newPoints[0])
         self.rightContour.append(newPoints[1])
         # self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
-        #self.update3DPoints(newPoints)
+        self.update3DPoints(newPoints)
 
     def pickPrimitive(self):
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
@@ -336,10 +330,10 @@ class ThreeSweep():
         triangles = np.array(genEdges())
         # if 'surf' in self:
         #     self.surf.remove()
-        #self.surf = ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=triangles)
-        #plt.draw()
-        #plt.pause(0.0001)
-        ##self.ax.plot(points[:,0],points[:,1],points[:,2])
+        self.surf = ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=triangles)
+        plt.draw()
+        plt.pause(0.0001)
+        #self.ax.plot(points[:,0],points[:,1],points[:,2])
         pass
 
     def generateTriSurf(self):
@@ -413,7 +407,7 @@ class ThreeSweep():
         # self.plot3DArray(self.objectPoints)
         for i in range(len(self.leftContour)):
             self.colorIndices.append(self.getallPoints(self.leftContour[i],self.rightContour[i]))
-            self.update3DPoints([self.leftContour[i],self.rightContour[i]])
+            # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
         self.generateTriSurf()
         pass
     def createSTL(self):
