@@ -2,7 +2,6 @@
 # These are only needed for Python v2 but are harmless for Python v3.
 # structured edges, iopl edge detection
 
-import sip
 import time
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
@@ -12,8 +11,8 @@ import math
 from sympy import *
 
 from ThreeSweep import ThreeSweep
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import qRgb, QImage
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtGui import qRgb, QImage
 
 threesweep = ThreeSweep()
 last_time = None
@@ -72,7 +71,6 @@ class ScribbleArea(QtGui.QWidget):
             sweep2 = QtGui.QVector2D(self.thirdPoint - self.secondPoint)
             cosine_angle = QtGui.QVector2D.dotProduct(sweep1,sweep2) / (sweep1.length() * sweep2.length())
             angle = acos(cosine_angle)*180/math.pi
-            print angle
             if angle < 60:
                 distance = (self.firstPoint - self.secondPoint)
                 center = (self.firstPoint + self.secondPoint) / 2

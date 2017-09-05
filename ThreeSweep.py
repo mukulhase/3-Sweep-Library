@@ -2,13 +2,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from sympy import *
-from sympy.geometry import *
-from stl import mesh
-# import pymesh
-import random
-from random import randint
-import time
 from mpl_toolkits.mplot3d import Axes3D
 import ipdb
 matplotlib.interactive = True
@@ -39,12 +32,12 @@ TEMPLATE_FACES = "%d %d %d %d"
 
 def getPoint(point):
     if type(point) == list:
-        return Point(point[0], point[1])
-    return Point(point.x(), point.y())
+        return point
+    return [point.x(), point.y()]
 
 
 def roundPoint(point):
-    return [int(round(point.x)), int(round(point.y))]
+    return [int(round(point[0])), int(round(point[1]))]
 
 def auto_canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
@@ -193,19 +186,19 @@ class ThreeSweep():
     def update3DPoints(self, newPoints):
         center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
         diff = newPoints[0] - newPoints[1]
-        radius = ((diff.y**2 + diff.x**2)**(0.5))/2
+        radius = ((diff[1]**2 + diff[0]**2)**(0.5))/2
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
         # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
-        theta = atan2(diff.y, diff.x)
+        theta = np.arctan2(diff[1], diff[0])
         transformation = np.array([
             [radius, 0, 0, center[0]],
             [0, radius, 0, 0],
             [0, 0, 1, -center[1]],
             [0, 0, 0, 1]], dtype=np.float)
         rotation = np.array([
-            [cos(theta), 0, sin(theta), 0],
+            [np.cos(theta), 0, np.sin(theta), 0],
             [0, 1, 0, 0],
-            [-sin(theta), 0, cos(theta), 0],
+            [-np.sin(theta), 0, np.cos(theta), 0],
             [0, 0, 0, 1]],dtype=np.float)
         tr = np.matmul(transformation,rotation)
         affineTrans = np.matmul(tr, scaled)
@@ -218,10 +211,10 @@ class ThreeSweep():
     def getallPoints(self, p1, p2):
         ''' Get 20 points between p1 and p2'''
         line = []
-        x0 = int(p1.x)
-        y0 = int(p1.y)
-        x1 = int(p2.x)
-        y1 = int(p2.y)
+        x0 = int(p1[0])
+        y0 = int(p1[1])
+        x1 = int(p2[0])
+        y1 = int(p2[1])
         # return [[(x0+x1)/2, (y0+y1)/2]] * self.primitiveDensity
 
         dx = x1 - x0
@@ -257,10 +250,8 @@ class ThreeSweep():
             ## weights for distance of points
             weights = np.linspace(0,1,self.tolerance)
             weights = np.append(weights,(1 - weights))
-            print weights
 
             def searchOut(point, slope, inv=False, k=1):
-                time.sleep(0.01)
                 if (slope > 1):
                     rayx = np.linspace(float(point[0] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
                     rayy = np.linspace(float(point[0] - self.tolerance), float(point[1] + self.tolerance), self.tolerance * 2, dtype=int)
@@ -271,25 +262,20 @@ class ThreeSweep():
                 values = values*weights
                 index = np.argmax(values)
                 if(values[index] != 0):
-                    return Point(rayx[np.argmax(values)],rayy[np.argmax(values)])
+                    return [rayx[np.argmax(values)],rayy[np.argmax(values)]]
 
             # offset by axis offset
             left += slope
             right += slope
-            # store as datatype
-            left = Point(left)
-            right = Point(right)
-            axisPoint = Point(axisPoint)
-
             # get slope for ray search
             slopeLeft = axisPoint - left
             slopeRight = axisPoint - right
-            slopeLeft = slopeLeft.y / slopeLeft.x
-            slopeRight = slopeRight.y / slopeRight.x
+            slopeLeft = slopeLeft[1] / slopeLeft[0]
+            slopeRight = slopeRight[1] / slopeRight[0]
 
             # search for contour points
-            foundleft = searchOut([left.x, left.y], slopeLeft)
-            foundright = searchOut([right.x, right.y], slopeRight)
+            foundleft = searchOut([left[0], left[1]], slopeLeft)
+            foundright = searchOut([right[0], right[1]], slopeRight)
             if (foundleft == None) or (foundright == None):
                 return [left, right]
             else:
@@ -368,27 +354,7 @@ class ThreeSweep():
         ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = triangles)
         plt.axis('equal')
         ax.axis('equal')
-        # plt.show()
-        # vertices = points[:,:-1]
-        # points = vertices
-        # faces = triangles
-        # mesh = pymesh.form_mesh(vertices, faces)
-        # novertices = np.shape(vertices)[0]
-        # vertex_colors = [
-        #     [num/novertices for num in range(novertices)],
-        #     [(novertices - num) / novertices for num in range(novertices)],
-        #     [num / novertices for num in range(novertices)],
-        # ]
-        # mesh.add_attribute("vertex_color", vertex_colors)
-        # pymesh.save_mesh("filename.ply", mesh)
-        # ipdb.set_trace()
         points = points[:,:-1]
-        cube = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
-        for i, f in enumerate(triangles):
-            for j in range(3):
-                cube.vectors[i][j] = points[int(floor(f[j])), :]
-        cube.save('output.stl')
-
         text = TEMPLATE_PLY_FILE % {
             "nPoints"  : points.shape[0],
             "nFacepoints" : triangles.shape[0],
@@ -409,7 +375,4 @@ class ThreeSweep():
             self.colorIndices.append(self.getallPoints(self.leftContour[i],self.rightContour[i]))
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
         self.generateTriSurf()
-        pass
-    def createSTL(self):
-        ''' takes the object points in order and creates pairs of triangles, writes to a file'''
         pass
