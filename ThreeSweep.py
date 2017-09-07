@@ -1,9 +1,8 @@
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
-import ipdb
+import matplotlib.pyplot as plt
+import numpy as np
+
 matplotlib.interactive = True
 
 
