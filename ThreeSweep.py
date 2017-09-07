@@ -1,35 +1,10 @@
 import pdb
 
 import cv2
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
-matplotlib.interactive = True
+from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
 
-
-TEMPLATE_PLY_FILE = u"""\
-{
-ply,
-format ascii 1.0,
-comment VCGLIB generated,
-element vertex %(nPoints)d,
-property float x,
-property float y,
-property float z,
-property uchar red,
-property uchar green,
-property uchar blue,
-property uchar alpha,
-element face %(nFacepoints)d,
-property list uchar int vertex_indices,
-end_header,
-[%(points)s],
-[%(facepoints)s]
-}
-"""
-TEMPLATE_VERTEX = "%f %f %f %d %d %d %d"
-TEMPLATE_FACES = "%d %d %d %d"
 
 def getPoint(point):
     if type(point) == list:
@@ -263,27 +238,14 @@ class ThreeSweep():
         self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)],np.float64)
         return self.primitivePoints
 
-    def plot3DArray(self,x):
-        self.ax.plot_wireframe(x[:,0], x[:,1], x[:,2])
-        plt.show()
-        pass
-
     def updatePlot(self,points):
-        #background = fig.canvas.copy_from_bbox(ax.bbox)
         def genEdges():
             topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
             topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
             return topleft + topright
 
         points = self.objectPoints
-        ax = self.fig.gca(projection='3d')
         triangles = np.array(genEdges())
-        # if 'surf' in self:
-        #     self.surf.remove()
-        self.surf = ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=triangles)
-        plt.draw()
-        plt.pause(0.0001)
-        #self.ax.plot(points[:,0],points[:,1],points[:,2])
         pass
 
     def generateTriSurf(self):
