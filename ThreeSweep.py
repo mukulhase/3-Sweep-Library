@@ -1,3 +1,5 @@
+import pdb
+
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -31,8 +33,8 @@ TEMPLATE_FACES = "%d %d %d %d"
 
 def getPoint(point):
     if type(point) == list:
-        return point
-    return [point.x(), point.y()]
+        return np.array(point)
+    return np.array([point.x(), point.y()])
 
 
 def roundPoint(point):
@@ -53,34 +55,58 @@ class ThreeSweep():
     ''' Module class for Three Sweep '''
 
     def __init__(self):
+        self.state = 'Init'
+        self.previousStates = []
         self.image = None
+        self.iter = 0
         self.loadedimage = None
-        self.leftContour = []
-        self.rightContour = []
+        self.leftContour = None
+        self.rightContour = None
         self.objectPoints = np.array([])
         self.colorIndices = []
-        self.sweepPoints = []
-        self.primitivePoints = []
+        self.sweepPoints = None
+        self.primitivePoints = None
         self.axisResolution = 10
         self.primitiveDensity = 10000
         self.gradient = None
         self.leftMajor = None
         self.rightMajor = None
         self.minor = None
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111, projection='3d')
-        self.ax.axis('equal')
-        self.ax.set_zlim3d(-10e-9, 10e9)
         self.tolerance = 70
         pass
 
+    def updateState(self, state=None):
+        def loadedImage():
+            self.leftContour = np.empty(((np.shape(self.image))[0], 2))
+            self.rightContour = np.empty(((np.shape(self.image))[0], 2))
+            self.sweepPoints = np.empty(((np.shape(self.image))[0], 2))
+
+        def minor():
+            if 'major' in self.previousStates:
+                self.updateState('primitiveSelected')
+
+        def major():
+            if 'minor' in self.previousStates:
+                self.updateState('primitiveSelected')
+
+        def primitiveSelected():
+            self.iter += 1
+            self.update3DPoints([self.leftContour[0], self.rightContour[0]])
+
+        if state:
+            self.previousStates.append(self.state)
+            self.state = state
+        state = self.state
+        locals()[self.state]()
+
     def loadImage(self, image):
         ''' Load image into module for processing '''
-        self.filename = image
-        if type(image) is unicode:
+        if isinstance(image, str):
+            self.filename = image
             self.image = cv2.imread(image,0)
         else:
             self.image = image
+        self.updateState('loadedImage')
         pass
 
     def showImage(self):
@@ -174,12 +200,14 @@ class ThreeSweep():
         ''' Set points for Major Axis '''
         self.leftMajor = getPoint(point1)
         self.rightMajor = getPoint(point2)
-        self.leftContour.append(self.leftMajor)
-        self.rightContour.append(self.rightMajor)
+        self.leftContour[self.iter] = self.leftMajor.T
+        self.rightContour[self.iter] = self.rightMajor.T
+        self.updateState('major')
         pass
     def setMinor(self, point):
         self.minor = getPoint(point)
-        self.sweepPoints.append(self.minor)
+        self.sweepPoints[self.iter] = self.minor
+        self.updateState('minor')
         pass
 
     def update3DPoints(self, newPoints):
@@ -210,6 +238,7 @@ class ThreeSweep():
     def getallPoints(self, p1, p2):
         ''' Get 20 points between p1 and p2'''
         line = []
+
         x0 = int(p1[0])
         y0 = int(p1[1])
         x1 = int(p2[0])
@@ -257,11 +286,16 @@ class ThreeSweep():
                 else:
                     rayy = np.linspace(float(point[1] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
                     rayx = np.linspace(float(point[0] - self.tolerance), float(point[0] + self.tolerance), self.tolerance * 2, dtype=int)
-                values = self.gradient[rayy, rayx]
+
+                try:
+                    values = self.gradient[
+                        np.clip(rayy, 0, self.gradient.shape[0] - 1), np.clip(rayx, 0, self.gradient.shape[1] - 1)]
+                except:
+                    pdb.set_trace()
                 values = values*weights
                 index = np.argmax(values)
                 if(values[index] != 0):
-                    return [rayx[np.argmax(values)],rayy[np.argmax(values)]]
+                    return np.array([rayx[np.argmax(values)], rayy[np.argmax(values)]])
 
             # offset by axis offset
             left += slope
@@ -269,13 +303,15 @@ class ThreeSweep():
             # get slope for ray search
             slopeLeft = axisPoint - left
             slopeRight = axisPoint - right
+            if (slopeLeft == slopeRight).all():
+                return
             slopeLeft = slopeLeft[1] / slopeLeft[0]
             slopeRight = slopeRight[1] / slopeRight[0]
 
             # search for contour points
             foundleft = searchOut([left[0], left[1]], slopeLeft)
             foundright = searchOut([right[0], right[1]], slopeRight)
-            if (foundleft == None) or (foundright == None):
+            if (foundleft is None) or (foundright is None):
                 return [left, right]
             else:
                 return [foundleft, foundright]
@@ -283,11 +319,15 @@ class ThreeSweep():
 
 
         point = getPoint(point)
-        direction = point - self.sweepPoints[-1]
-        newPoints = detectBoundaryPoints(point, direction, self.leftContour[-1], self.rightContour[-1])
-        self.sweepPoints.append(point)
-        self.leftContour.append(newPoints[0])
-        self.rightContour.append(newPoints[1])
+        direction = point - self.sweepPoints[self.iter - 1]
+        newPoints = detectBoundaryPoints(point, direction, self.leftContour[self.iter - 1],
+                                         self.rightContour[self.iter - 1])
+        if newPoints == None:
+            return
+        self.sweepPoints[self.iter] = point.T
+        self.leftContour[self.iter] = newPoints[0]
+        self.rightContour[self.iter] = newPoints[1]
+        self.iter += 1
         # self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
         self.update3DPoints(newPoints)
 
@@ -327,37 +367,21 @@ class ThreeSweep():
             topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
             return topleft + topright
 
-        def generate_vertices(i, points):
-            v = points[i]
-            if (i / self.primitiveDensity) < len(self.colorIndices):
-                layer = self.colorIndices[i / self.primitiveDensity]
-            else:
-                layer = self.colorIndices[len(self.colorIndices) - 1]
-
-            if len(layer) > 0:
-                cidx = (i % self.primitiveDensity) % len(layer)
-                color = self.loadedimage[layer[cidx][1],layer[cidx][0]]
-            else:
-                color = [0,0,0]
-            #                                       color[0] = B color[1] = G color[2] = R
+        def generate_vertices(v, color):
             return TEMPLATE_VERTEX % (v[0], v[1], v[2], color[2], color[1], color[0], 255) # put colors where
 
         def generate_faces(f):
             return TEMPLATE_FACES % (3, f[0], f[1], f[2])
 
         points = self.objectPoints
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        plt.axis('equal')
         triangles = np.array(genEdges())
-        ax.plot_trisurf(points[:,0],points[:,1],points[:,2], triangles = triangles)
-        plt.axis('equal')
-        ax.axis('equal')
-        points = points[:,:-1]
+        points = points[:, :-1].astype(np.int)
+        colorindices = np.array(self.colorIndices).T
+        colors = self.loadedimage[colorindices[1], colorindices[0]]
         text = TEMPLATE_PLY_FILE % {
             "nPoints"  : points.shape[0],
             "nFacepoints" : triangles.shape[0],
-            "points" : "\n".join(generate_vertices(i, points) for i in range(0,points.shape[0])),
+            "points": "\n".join([generate_vertices(points[i], colors[i]) for i in range(points.shape[0])]),
             "facepoints" : "\n".join(generate_faces(f) for f in triangles)
         }
 
@@ -370,8 +394,8 @@ class ThreeSweep():
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
-        for i in range(len(self.leftContour)):
-            self.colorIndices.append(self.getallPoints(self.leftContour[i],self.rightContour[i]))
+        for i in range(self.iter):
+            self.colorIndices += self.getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
         self.generateTriSurf()
         pass

@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 
+import shelve
+import time
+
+import cv2
+import numpy as np
 from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
 from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
@@ -11,7 +16,6 @@ from ThreeSweep import ThreeSweep
 
 threesweep = ThreeSweep()
 last_time = None
-import shelve
 
 d = shelve.open('config.dat')
 
@@ -195,21 +199,21 @@ class ScribbleArea(QWidget):
 
     def contourPointsOverlay(self):
         def checkAndPlot(i):
-            x = int(round(i.x))
-            y = int(round(i.y))
+            x = int(round(i[0]))
+            y = int(round(i[1]))
             if ((x, y) in self.overLayed):
                 pass
             else:
                 self.plotPoint(QPoint(x, y))
                 self.overLayed[x, y] = True
 
-        for i in threesweep.leftContour:
+        for i in threesweep.leftContour[:threesweep.iter]:
             checkAndPlot(i)
-        for i in threesweep.rightContour:
+        for i in threesweep.rightContour[:threesweep.iter]:
             checkAndPlot(i)
 
     def restoreDrawing(self):
-        self.imagePainter.drawImage(QtCore.QPoint(0, 0), self.oldimage)
+        self.imagePainter.drawImage(QPoint(0, 0), self.oldimage)
         self.imagePainter.drawImage(0, 0, self.toQImage(self.edges))
 
     def paintEvent(self, event):
@@ -334,10 +338,10 @@ class ScribbleArea(QWidget):
                 return qim.copy() if copy else qim
             elif len(im.shape) == 3:
                 if im.shape[2] == 3:
-                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
+                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888)
                     return qim.copy() if copy else qim
                 elif im.shape[2] == 4:
-                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
+                    qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32)
                     return qim.copy() if copy else qim
 
     def grabCut(self):
