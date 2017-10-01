@@ -49,8 +49,8 @@ int main(int argc, char **argv)
     lightEntity->addComponent(lightTransform);
 
     // For camera controls
-//    Qt3DExtras::QFirstPersonCameraController *camController = new Qt3DExtras::QFirstPersonCameraController(rootEntity);
-//    camController->setCamera(mainWin.cameraEntity);
+    Qt3DExtras::QFirstPersonCameraController *camController = new Qt3DExtras::QFirstPersonCameraController(rootEntity);
+    camController->setCamera(mainWin.cameraEntity);
 
     // Set root object of the scene
     view->setRootEntity(rootEntity);

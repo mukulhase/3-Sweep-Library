@@ -4,11 +4,17 @@
 #include <QtGui/QGuiApplication>
 #include <QtCore/QDebug>
 #include <QMaterial>
+#include <Qt3DRender/qtexture.h>
+
 #include "planeentity.h"
 
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget)
     : m_rootEntity(rootEntity)
     , m_parentWidget(parentWidget)
+//    , m_pot(new RenderableEntity(this))
+    , m_potMaterial(new Qt3DExtras::QNormalDiffuseMapMaterial())
+    , m_potImage(new Qt3DRender::QTextureImage())
+    , m_potNormalImage(new Qt3DRender::QTextureImage())
 {
 
     // Cuboid shape data
@@ -18,17 +24,29 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     cuboid->setXZMeshResolution(QSize(2, 2));
     // CuboidMesh Transform
     objTransform = new Qt3DCore::QTransform();
-    objTransform->setScale(0.2f);
+    objTransform->setScale(0.05f);
     objTransform->setTranslation(QVector3D(0.0f, 5.0f, 0.0f));
 
     objMaterial = new Qt3DExtras::QPhongMaterial();
     objMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
 
+
+    m_potMaterial->diffuse()->addTextureImage(m_potImage);
+    m_potMaterial->normal()->addTextureImage(m_potNormalImage);
+    m_potImage->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/displacement.jpg"));
+    m_potNormalImage->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/normal.jpg"));
+    Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
+    mesh->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/ninjaHead_Low.obj"));
+
+    m_potMaterial->setShininess(2.0f);
+    m_potMaterial->setSpecular(QColor::fromRgbF(0.15f, 0.15f, 0.15f, 1.0f));
     //Cuboid
     m_objEntity = new Qt3DCore::QEntity(m_rootEntity);
-    m_objEntity->addComponent(cuboid);
+//    m_objEntity->addComponent(cuboid);
     m_objEntity->addComponent(objMaterial);
     m_objEntity->addComponent(objTransform);
+    m_objEntity->addComponent(m_potMaterial);
+    m_objEntity->addComponent(mesh);
 
     planeEntity = new PlaneEntity(m_rootEntity);
     planeEntity->mesh()->setHeight(20.0f);
@@ -44,6 +62,7 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     objectMaterial->setTextureScale(1.0f);
     objectMaterial->setShininess(80.0f);
     objectMaterial->setAmbient(QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f));
+
 
     this->initData();
 
@@ -62,8 +81,8 @@ void SceneModifier::initData()
 
 void SceneModifier::loadImage(const QString &fileName)
 {
-    if(m_objEntity->isEnabled())
-        m_objEntity->setEnabled(false);
+//    if(m_objEntity->isEnabled())
+//        m_objEntity->setEnabled(false);
     QStringList filepath = fileName.split('.');
     qInfo() << filepath[0];
 
