@@ -4,12 +4,14 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     scenemodifier.cpp \
-    planeentity.cpp
+    planeentity.cpp \
+    renderableentity.cpp
 
 HEADERS += \
 	mainwindow.h \
     scenemodifier.h \
-    planeentity.h
+    planeentity.h \
+    renderableentity.h
 
 RESOURCES += \
     ./exampleresources/textures.qrc

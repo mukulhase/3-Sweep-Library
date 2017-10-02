@@ -7,7 +7,7 @@ import time
 import cv2
 import numpy as np
 from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor
+from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QWidget)
@@ -17,7 +17,7 @@ from ThreeSweep import ThreeSweep
 threesweep = ThreeSweep()
 last_time = None
 
-d = shelve.open('config.dat')
+# d = shelve.open('config.dat')
 
 
 class ScribbleArea(QWidget):
@@ -288,6 +288,9 @@ class ScribbleArea(QWidget):
         # self.imagePainter.setBrush(QtGui.QColor(200, 0, 0))
         width = abs(self.rectPoint2.x() - self.rectPoint1.x())
         height = abs(self.rectPoint2.y() - self.rectPoint1.y())
+        threesweep.rectPoint1 = self.rectPoint1
+        threesweep.rectPoint2 = self.rectPoint2
+
         self.imagePainter.drawRect(self.rectPoint1.x(), self.rectPoint1.y(), width, height)
 
     def resizeImage(self, image, newSize):
@@ -344,41 +347,6 @@ class ScribbleArea(QWidget):
                     qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32)
                     return qim.copy() if copy else qim
 
-    def grabCut(self):
-        # img_org = cv2.imread(self.imagePath)
-        # img = img_org
-        # mask = np.zeros(img.shape[:2], np.uint8)
-        # bgdModel = np.zeros((1, 65), np.float64)
-        # fgdModel = np.zeros((1, 65), np.float64)
-        #
-        # width = abs(self.rectPoint2.x() - self.rectPoint1.x())
-        # height = abs(self.rectPoint2.y() - self.rectPoint1.y())
-        # rect = (self.rectPoint1.x(), self.rectPoint1.y(), width, height)
-        # cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
-        #
-        # mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-        # img = img * mask2[:, :, np.newaxis]
-        #
-        # # img[np.where((img > [0, 0, 0]).all(axis=2))] = [255, 255, 255]
-        # imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-        # ret,thresh = cv2.threshold(imgray,1,255,0)
-        #
-        # kernel = np.array([[0, 0, 1, 0, 0],
-        #                    [0, 1, 1, 1, 0],
-        #                    [1, 1, 1, 1, 1],
-        #                    [0, 1, 1, 1, 0],
-        #                    [0, 0, 1, 0, 0]], np.uint8)
-        #
-        # # Fill the mask.
-        # obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-        #
-        # inpaint_mask = cv2.inpaint(img_org,obj_seg,15,cv2.INPAINT_TELEA)
-        # cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
-        #
-        # threesweep.image = obj_seg
-        # threesweep.loadedimage = img_org
-        pass
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -391,6 +359,7 @@ class MainWindow(QMainWindow):
 
         self.createActions()
         self.createMenus()
+        self.createToolBar()
 
         self.setWindowTitle("3-Sweep")
         self.resize(1500, 1500)
@@ -489,7 +458,7 @@ class MainWindow(QMainWindow):
                                    triggered=self.scribbleArea.startDrawRect)
 
         self.grabCutAct = QAction("&Grab Cut", self,
-                                  triggered=self.scribbleArea.grabCut)
+                                  triggered=threesweep.grabCut)
 
         self.clearScreenAct = QAction("&Clear Screen", self, shortcut="Ctrl+L",
                                       triggered=self.scribbleArea.clearImage)
@@ -528,12 +497,11 @@ class MainWindow(QMainWindow):
 
     def createToolBar(self):
 
-        drawingMenu = QAction("&Draw", self)
-        drawingMenu.addAction(self.startSweepAct)
-        drawingMenu.addAction(self.drawRectAct)
-        drawingMenu.addAction(self.grabCutAct)
+        tb = self.addToolBar('Image Processing')
+        tb.addAction(self.drawRectAct)
+        tb.addAction(self.startSweepAct)
+        tb.addAction(self.grabCutAct)
 
-        self.addToolBar(drawingMenu)
 
     def maybeSave(self):
         if self.scribbleArea.isModified():

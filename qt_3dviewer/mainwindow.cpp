@@ -39,7 +39,7 @@ void MainWindow::open()
         {
             modifier->loadImage(fileName);
             setCurrentFile(fileName);
-            loadPLY(fileName);
+//            loadPLY(fileName);
             statusBar()->showMessage(tr("File loaded"), 2000);
         }
     }
