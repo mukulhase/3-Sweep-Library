@@ -66,7 +66,7 @@ void SceneModifier::loadImage(const QString &fileName)
     // Object
     QFileInfo filmesh(filepath[0] + ".obj");
 
-    m_potImage->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/bottle_diffuse.png"));
+    m_potImage->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/bottle_diffuse_2.png"));
     m_potNormalImage->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/qt_3dviewer/exampleresources/bottle_normal.png"));
 
     Qt3DRender::QMesh *mesh = new Qt3DRender::QMesh();
