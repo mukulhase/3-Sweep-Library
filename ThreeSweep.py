@@ -48,6 +48,8 @@ class ThreeSweep():
         self.rightMajor = None
         self.minor = None
         self.tolerance = 70
+        self.rectPoint1 = None
+        self.rectPoint2 = None
         pass
 
     def updateState(self, state=None):
@@ -92,8 +94,42 @@ class ThreeSweep():
 
     def getEdges(self):
         ''' Run edge detection on the image '''
-        self.gradient = auto_canny(self.image)
+        # self.gradient = auto_canny(self.image)
         return self.gradient
+        pass
+
+    def grabCut(self):
+        img_org = self.image
+        img = img_org
+        mask = np.zeros(img.shape[:2], np.uint8)
+        bgdModel = np.zeros((1, 65), np.float64)
+        fgdModel = np.zeros((1, 65), np.float64)
+        
+        width = abs(self.rectPoint2.x() - self.rectPoint1.x())
+        height = abs(self.rectPoint2.y() - self.rectPoint1.y())
+        rect = (self.rectPoint1.x(), self.rectPoint1.y(), width, height)
+        cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+        
+        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+        img = img * mask2[:, :, np.newaxis]
+        
+        # img[np.where((img > [0, 0, 0]).all(axis=2))] = [255, 255, 255]
+        imgray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        ret,thresh = cv2.threshold(imgray,1,255,0)
+        
+        kernel = np.array([[0, 0, 1, 0, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 1, 1, 1, 1],
+                           [0, 1, 1, 1, 0],
+                           [0, 0, 1, 0, 0]], np.uint8)
+        
+        # Fill the mask.
+        obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        
+        inpaint_mask = cv2.inpaint(img_org,obj_seg,6,cv2.INPAINT_TELEA)
+        cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
+        
+        self.gradient = auto_canny(obj_seg)
         pass
 
     def setMajor(self, point1, point2):
