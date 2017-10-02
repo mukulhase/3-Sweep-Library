@@ -35,26 +35,32 @@ class ThreeSweep():
         self.image = None
         self.iter = 0
         self.loadedimage = None
+        self.straightAxis = False
         self.leftContour = None
+        self.test = None
         self.rightContour = None
         self.objectPoints = np.array([])
         self.colorIndices = []
         self.sweepPoints = None
         self.primitivePoints = None
-        self.axisResolution = 10
-        self.primitiveDensity = 10000
+        self.axisResolution = 20
+        self.primitiveDensity = 200
         self.gradient = None
         self.leftMajor = None
         self.rightMajor = None
         self.minor = None
         self.tolerance = 70
+        self.weights = None
         pass
 
     def updateState(self, state=None):
         def loadedImage():
-            self.leftContour = np.empty(((np.shape(self.image))[0], 2))
-            self.rightContour = np.empty(((np.shape(self.image))[0], 2))
-            self.sweepPoints = np.empty(((np.shape(self.image))[0], 2))
+            self.leftContour = np.empty(((np.shape(self.image))[0]*10, 2))
+            self.rightContour = np.empty(((np.shape(self.image))[0]*10, 2))
+            self.sweepPoints = np.empty(((np.shape(self.image))[0]*10, 2))
+            ## weights for distance of points
+            self.weights = np.linspace(0, 1, self.tolerance)
+            self.weights = np.append(self.weights, (1 - self.weights))
 
         def minor():
             if 'major' in self.previousStates:
@@ -67,6 +73,9 @@ class ThreeSweep():
         def primitiveSelected():
             self.iter += 1
             self.update3DPoints([self.leftContour[0], self.rightContour[0]])
+
+        def startedSweep():
+            pass
 
         if state:
             self.previousStates.append(self.state)
@@ -135,71 +144,45 @@ class ThreeSweep():
             self.objectPoints = np.transpose(affineTrans)
         # self.updatePlot(np.transpose(affineTrans))
 
-    def getallPoints(self, p1, p2):
-        ''' Get 20 points between p1 and p2'''
-        line = []
+    def getPointsBetween(self, p1, p2, quantity):
+        rayx = np.linspace(float(p1[0]), float(p2[0]),quantity, dtype=int)
+        rayy = np.linspace(float(p1[1]), float(p2[1]),quantity, dtype=int)
+        return (rayx, rayy)
 
-        x0 = int(p1[0])
-        y0 = int(p1[1])
-        x1 = int(p2[0])
-        y1 = int(p2[1])
-        # return [[(x0+x1)/2, (y0+y1)/2]] * self.primitiveDensity
-
-        dx = x1 - x0
-        dy = y1 - y0
-        D = 2 * dy - dx
-        y = y0
-        for x in range(x0, x1 + 1):
-            line.append([x, y])
-            if D > 0:
-                y = y + 1
-                D = D - 2 * dx
-            D = D + 2 * dy
-        if len(line) > 1:
-            line = np.array(line)
-            interpolated1 = np.interp(np.linspace(0, len(line), self.primitiveDensity / 2),
-                                      np.linspace(0, len(line) - 1, len(line)), line[:, 0])
-            interpolated2 = np.interp(np.linspace(0, len(line), self.primitiveDensity / 2),
-                                      np.linspace(0, len(line) - 1, len(line)), line[:, 1])
-            interpolated = np.array([interpolated1, interpolated2], dtype=int)
-            return np.transpose(interpolated).tolist() * 2
-        else:
-            return [[x0, y0]] * self.primitiveDensity
 
     def addSweepPoint(self, point):
         ''' Called everytime another point on the axis is given by user '''
 
-        def detectBoundaryPoints(axisPoint, slope, left, right):
+        def searchOut(point, slope):
+            if abs(slope) > 1:
+                p1= [point[0] - self.tolerance*(1.0/slope), point[1] - self.tolerance]
+                p2= [point[0] + self.tolerance*(1.0/slope), point[1] + self.tolerance]
+            else:
+                p1= [point[0] - self.tolerance, point[1] - self.tolerance * slope]
+                p2= [point[0] + self.tolerance, point[1] + self.tolerance * slope]
+            (rayx, rayy) = self.getPointsBetween(p1, p2, self.tolerance*2)
+            values = self.gradient[np.clip(rayy, 0, self.gradient.shape[0] - 1), np.clip(rayx, 0, self.gradient.shape[1] - 1)]
+            values = values * self.weights
+            index = np.argmax(values)
+            if (values[index] != 0):
+                return np.array([rayx[np.argmax(values)], rayy[np.argmax(values)]])
+            return False
+
+        def detectBoundaryPoints(axisPoint, shifted, l, r, anglediff):
             ''' Detect points on the boundary '''
 
-            def gaussian(x, mu, sig):
-                return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
-
-            ## weights for distance of points
-            weights = np.linspace(0,1,self.tolerance)
-            weights = np.append(weights,(1 - weights))
-
-            def searchOut(point, slope, inv=False, k=1):
-                if (slope > 1):
-                    rayx = np.linspace(float(point[0] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
-                    rayy = np.linspace(float(point[0] - self.tolerance), float(point[1] + self.tolerance), self.tolerance * 2, dtype=int)
-                else:
-                    rayy = np.linspace(float(point[1] - self.tolerance * slope), float(point[1] + self.tolerance * slope), self.tolerance * 2, dtype=int)
-                    rayx = np.linspace(float(point[0] - self.tolerance), float(point[0] + self.tolerance), self.tolerance * 2, dtype=int)
-
-                try:
-                    values = self.gradient[
-                        np.clip(rayy, 0, self.gradient.shape[0] - 1), np.clip(rayx, 0, self.gradient.shape[1] - 1)]
-                except:
-                    pdb.set_trace()
-                values = values*weights
-                index = np.argmax(values)
-                if(values[index] != 0):
-                    return np.array([rayx[np.argmax(values)], rayy[np.argmax(values)]])
-
             # offset by axis offset
-            left += slope
-            right += slope
+            left = l + shifted
+            right = r + shifted
+            if self.straightAxis == False:
+                c, s = np.cos(anglediff), np.sin(anglediff)
+                rotMatrix = np.matrix([[c, -s], [s, c]])
+                points = np.array([left,right])
+                shiftedToOrigin = points - axisPoint
+                rotated = np.matmul(shiftedToOrigin, rotMatrix)
+                shiftedBack = rotated + axisPoint
+                left = np.array([shiftedBack[0,0],shiftedBack[0,1]])
+                right = np.array([shiftedBack[1,0],shiftedBack[1,1]])
             # get slope for ray search
             slopeLeft = axisPoint - left
             slopeRight = axisPoint - right
@@ -211,19 +194,43 @@ class ThreeSweep():
             # search for contour points
             foundleft = searchOut([left[0], left[1]], slopeLeft)
             foundright = searchOut([right[0], right[1]], slopeRight)
-            if (foundleft is None) or (foundright is None):
+            if (foundleft is False) or (foundright is False):
                 return [left, right]
             else:
                 return [foundleft, foundright]
             pass
 
+        def generateIntermediatePoints(oldPoint, newPoint):
+            slope = oldPoint - newPoint
+            slope = (slope[1]+0.0)/slope[0]
+            slope = -(1.0/slope)
+            (rayx, rayy) = self.getPointsBetween(newPoint, oldPoint, self.axisResolution)
+            intermediatePoints = np.array([rayx, rayy], dtype=int).T.tolist()
+            return list(map(lambda x:searchOut(x, slope),intermediatePoints))
 
         point = getPoint(point)
-        direction = point - self.sweepPoints[self.iter - 1]
-        newPoints = detectBoundaryPoints(point, direction, self.leftContour[self.iter - 1],
-                                         self.rightContour[self.iter - 1])
+        shift = point - self.sweepPoints[self.iter - 1]
+        if np.linalg.norm(shift) < self.axisResolution:
+            return
+        angle = np.arctan2(shift[1],shift[0])
+        if self.state == 'primitiveSelected':
+            self.previousangle = angle
+            self.updateState('startedSweep')
+        anglediff = self.previousangle - angle
+        self.previousangle = angle
+        newPoints = detectBoundaryPoints(point, shift, self.leftContour[self.iter - 1],
+                                         self.rightContour[self.iter - 1], anglediff)
         if newPoints == None:
             return
+        leftintermediate = generateIntermediatePoints(newPoints[0],self.leftContour[self.iter - 1])
+        rightintermediate = generateIntermediatePoints(newPoints[1],self.rightContour[self.iter - 1])
+        interNewPoints = filter(lambda x: (x[0] is not False) and (x[1] is not False), zip(leftintermediate, rightintermediate))
+        for i in interNewPoints:
+            self.sweepPoints[self.iter] = point.T
+            self.leftContour[self.iter] = i[0]
+            self.rightContour[self.iter] = i[1]
+            self.iter += 1
+            self.update3DPoints(i)
         self.sweepPoints[self.iter] = point.T
         self.leftContour[self.iter] = newPoints[0]
         self.rightContour[self.iter] = newPoints[1]
@@ -233,7 +240,6 @@ class ThreeSweep():
 
     def pickPrimitive(self):
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
-        self.primitiveDensity = 40
         angles = np.linspace(0, 2 * np.pi, self.primitiveDensity)
         self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)],np.float64)
         return self.primitivePoints
@@ -281,8 +287,12 @@ class ThreeSweep():
 
     def end(self):
         # self.plot3DArray(self.objectPoints)
+        def getallPoints(p1, p2):
+            (interpolated1, interpolated2) = self.getPointsBetween(p1, p2, self.primitiveDensity / 2)
+            return np.array([interpolated1, interpolated2], dtype=int).T.tolist() * 2
+
         for i in range(self.iter):
-            self.colorIndices += self.getallPoints(self.leftContour[i], self.rightContour[i])
+            self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
         self.generateTriSurf()
         pass
