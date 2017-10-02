@@ -33,7 +33,6 @@ int main(int argc, char **argv)
     // Camera
     mainWin.cameraEntity = view->camera();
 
-//    cameraEntity->setProjectionType(Qt3DRender::QCameraLens::PerspectiveProjection);
     mainWin.cameraEntity->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
     mainWin.cameraEntity->setPosition(QVector3D(0.0f, 24.0f, -0.5f));
     mainWin.cameraEntity->setUpVector(QVector3D(0, 1, 0));
@@ -49,8 +48,8 @@ int main(int argc, char **argv)
     lightEntity->addComponent(lightTransform);
 
     // For camera controls
-    Qt3DExtras::QFirstPersonCameraController *camController = new Qt3DExtras::QFirstPersonCameraController(rootEntity);
-    camController->setCamera(mainWin.cameraEntity);
+//    Qt3DExtras::QFirstPersonCameraController *camController = new Qt3DExtras::QFirstPersonCameraController(rootEntity);
+//    camController->setCamera(mainWin.cameraEntity);
 
     // Set root object of the scene
     view->setRootEntity(rootEntity);
