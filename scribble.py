@@ -8,19 +8,30 @@ import cv2
 import numpy as np
 from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
 from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor, QIcon
+from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QWidget)
+
+import sys
+import math, random
+
+from PyQt5.QtCore import (QPoint, QPointF, QRect, QRectF, QSize, Qt, QTime,
+        QTimer)
+from PyQt5.QtGui import (QBrush, QColor, QFontMetrics, QImage, QPainter,
+        QRadialGradient, QSurfaceFormat)
+from PyQt5.QtWidgets import QApplication, QOpenGLWidget
+from PyQt5.QtGui import qBlue,qRed,qGreen
+import OpenGL.GL as gl
 
 from ThreeSweep import ThreeSweep
 
 threesweep = ThreeSweep()
 last_time = None
 
-# d = shelve.open('config.dat')
+d = shelve.open('config.dat')
 
-
-class ScribbleArea(QWidget):
+class ScribbleArea(QOpenGLWidget):
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
         self.tempDrawing = False
@@ -38,7 +49,8 @@ class ScribbleArea(QWidget):
         self.state = 'None'
         self.myPenWidth = 5
         self.myPenColor = Qt.blue
-        self.image = QImage()
+        self.image = QImage().convertToFormat(5)
+        self.image.fill(qRgba(255,0,0,0))
         self.imagePath = None
         self.lastPoint = QPoint()
         self.imagePainter = None
@@ -211,6 +223,9 @@ class ScribbleArea(QWidget):
             checkAndPlot(i)
         for i in threesweep.rightContour[:threesweep.iter]:
             checkAndPlot(i)
+        if threesweep.test:
+            for i in threesweep.test:
+                checkAndPlot(i)
 
     def restoreDrawing(self):
         self.imagePainter.drawImage(QPoint(0, 0), self.oldimage)
@@ -219,7 +234,10 @@ class ScribbleArea(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         dirtyRect = event.rect()
-        painter.drawImage(dirtyRect, self.image, dirtyRect)
+        painter.drawImage(dirtyRect, self.image, dirtyRect, flags=Qt.NoOpaqueDetection)
+        painter.end()
+
+        pass
 
     def resizeEvent(self, event):
         if self.width() > self.image.width() or self.height() > self.image.height():
