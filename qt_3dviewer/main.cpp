@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     MainWindow mainWin;
 
     Qt3DExtras::Qt3DWindow *view = new Qt3DExtras::Qt3DWindow();
-    view->defaultFrameGraph()->setClearColor(QColor(200,207,200,255));
+     view->defaultFrameGraph()->setClearColor(QColor(200,207,200,255));
     QWidget *sceneContainer = QWidget::createWindowContainer(view);
     QSize screenSize = view->screen()->size();
     sceneContainer->setMinimumSize(QSize(200, 100));
