@@ -22,14 +22,13 @@ from PyQt5.QtGui import (QBrush, QColor, QFontMetrics, QImage, QPainter,
         QRadialGradient, QSurfaceFormat)
 from PyQt5.QtWidgets import QApplication, QOpenGLWidget
 from PyQt5.QtGui import qBlue,qRed,qGreen
-import OpenGL.GL as gl
 
 from ThreeSweep import ThreeSweep
 
 threesweep = ThreeSweep()
 last_time = None
 
-d = shelve.open('config.dat')
+# d = shelve.open('config.dat')
 
 class ScribbleArea(QOpenGLWidget):
     def __init__(self, parent=None):
@@ -403,7 +402,7 @@ class MainWindow(QMainWindow):
                 image = cv2.imread(fileName)
                 threesweep.loadImage(image)
                 threesweep.loadedimage = image
-                d['lastopened'] = fileName
+                # d['lastopened'] = fileName
 
     def openLast(self):
         if 'lastopened' in d:

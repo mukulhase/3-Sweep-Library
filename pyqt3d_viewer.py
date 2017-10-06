@@ -67,8 +67,8 @@ class MainObject(QEntity):
         self.m_objectMaterial.diffuse().addTextureImage(self.m_objectImage)
         self.m_objectMaterial.normal().addTextureImage(self.m_objectNormalImage)
 
-        self.m_objectImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/bottle_diffuse.png') )
-        self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/bottle_normal.png') )
+        self.m_objectImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/color.png') )
+        self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/normal.png') )
     
         self.m_objectMaterial.setShininess(80.0)
         self.m_objectMaterial.setSpecular(QColor.fromRgbF(1.0, 1.0, 1.75, 1.0))
