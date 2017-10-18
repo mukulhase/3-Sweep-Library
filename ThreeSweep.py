@@ -52,6 +52,7 @@ class ThreeSweep():
         self.rectPoint1 = None
         self.rectPoint2 = None
         self.weights = None
+        self.inpaintiterations = 6
         pass
 
     def updateState(self, state=None):
@@ -137,7 +138,7 @@ class ThreeSweep():
         # Fill the mask.
         obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        inpaint_mask = cv2.inpaint(img_org,obj_seg,6,cv2.INPAINT_TELEA)
+        inpaint_mask = cv2.inpaint(img_org,obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
         cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
 
         self.gradient = auto_canny(obj_seg)
@@ -166,6 +167,7 @@ class ThreeSweep():
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
         # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = np.arctan2(diff[1], diff[0])
+        print(theta);
         transformation = np.array([
             [radius, 0, 0, center[0]],
             [0, radius, 0, 0],
@@ -235,7 +237,8 @@ class ThreeSweep():
             foundleft = searchOut([left[0], left[1]], slopeLeft)
             foundright = searchOut([right[0], right[1]], slopeRight)
             if (foundleft is False) or (foundright is False):
-                return [left, right]
+                return None
+                # return [left, right]
             else:
                 return [foundleft, foundright]
             pass
@@ -257,11 +260,12 @@ class ThreeSweep():
             self.previousangle = angle
             self.updateState('startedSweep')
         anglediff = self.previousangle - angle
-        self.previousangle = angle
         newPoints = detectBoundaryPoints(point, shift, self.leftContour[self.iter - 1],
                                          self.rightContour[self.iter - 1], anglediff)
         if newPoints == None:
             return
+        self.previousangle = angle
+
         leftintermediate = generateIntermediatePoints(newPoints[0],self.leftContour[self.iter - 1])
         rightintermediate = generateIntermediatePoints(newPoints[1],self.rightContour[self.iter - 1])
         interNewPoints = filter(lambda x: (x[0] is not False) and (x[1] is not False), zip(leftintermediate, rightintermediate))

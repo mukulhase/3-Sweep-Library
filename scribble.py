@@ -6,9 +6,9 @@ import time
 
 import cv2
 import numpy as np
+import Viewer3D
 from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor, QIcon
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor
+from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QWidget)
@@ -69,6 +69,7 @@ class ScribbleArea(QOpenGLWidget):
             self.state = state
         state = (self.state)
         if state == 'Start':
+            self.saveDrawing()
             pass
         elif self.state == 'FirstSweep':
             self.edges = threesweep.getEdges()
@@ -318,7 +319,7 @@ class ScribbleArea(QOpenGLWidget):
         self.stateUpdate('Start')
 
     def drawGrabCutRectangle(self):
-        self.drawRectangle(self.rectPoint1, self.rectPoint2)
+        self.drawRectangle(self.rectPoint1, self.rectPoint2, True)
 
     def drawRectangle(self, point1, point2, temp=False):
         if not point1 and not point2:
@@ -494,11 +495,9 @@ class MainWindow(QMainWindow):
         self.startSweepAct = QAction("&Start Sweeping..", self,
                                      triggered=self.scribbleArea.startSweep)
 
-        self.drawRectAct = QAction("&Draw Rectangle", self,
+        self.drawRectAct = QAction("&Grab Cut", self,
                                    triggered=self.scribbleArea.startGrabCut)
 
-        self.grabCutAct = QAction("&Grab Cut", self,
-                                  triggered=threesweep.grabCut)
 
         self.clearScreenAct = QAction("&Clear Screen", self, shortcut="Ctrl+L",
                                       triggered=self.scribbleArea.clearImage)
@@ -540,8 +539,6 @@ class MainWindow(QMainWindow):
         tb = self.addToolBar('Image Processing')
         tb.addAction(self.drawRectAct)
         tb.addAction(self.startSweepAct)
-        tb.addAction(self.grabCutAct)
-
 
     def maybeSave(self):
         if self.scribbleArea.isModified():
@@ -574,4 +571,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    viewer = Viewer3D.Viewer3D(app)
+    viewer.loadScene()
+
     sys.exit(app.exec_())
