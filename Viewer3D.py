@@ -14,7 +14,7 @@ from PyQt5.Qt3DExtras import (Qt3DWindow, QDiffuseMapMaterial,
         QPhongMaterial, QPlaneMesh)
 
 from PyQt5.Qt3DInput import QInputAspect
-from PyQt5.Qt3DRender import QCamera, QCameraLens, QMesh, QTextureImage, QPointLight
+from PyQt5.Qt3DRender import QCamera, QCameraLens, QMesh, QTextureImage, QPointLight, QObjectPicker
 
 class PlaneEntity(QEntity):
 
@@ -141,91 +141,99 @@ class SceneModifier(QObject):
     def scaleDown(self):
         self.obj.setScale(self.obj.scale() - 0.005)
 
-app = QApplication(sys.argv)
+class Viewer3D():
+    def __init__(self, app):
+        view = Qt3DWindow()
+        # view.defaultFramegraph().setClearColor(QColor(0x4d4d4f))
+        container = QWidget.createWindowContainer(view)
+        screenSize = view.screen().size()
+        container.setMinimumSize(QSize(200, 100))
+        container.setMaximumSize(screenSize)
 
-view = Qt3DWindow()
-# view.defaultFramegraph().setClearColor(QColor(0x4d4d4f))
-container = QWidget.createWindowContainer(view)
-screenSize = view.screen().size()
-container.setMinimumSize(QSize(200, 100))
-container.setMaximumSize(screenSize)
+        widget = QWidget()
+        self.hLayout = QHBoxLayout(widget)
+        self.vLayout = QVBoxLayout()
+        self.vLayout.setAlignment(Qt.AlignTop)
+        self.hLayout.addWidget(container, 1)
+        self.hLayout.addLayout(self.vLayout)
 
-widget = QWidget()
-hLayout = QHBoxLayout(widget)
-vLayout = QVBoxLayout()
-vLayout.setAlignment(Qt.AlignTop)
-hLayout.addWidget(container, 1)
-hLayout.addLayout(vLayout)
+        widget.setWindowTitle("3D Viewer")
 
-widget.setWindowTitle("3D Viewer")
+        aspect = QInputAspect()
+        view.registerAspect(aspect)
 
-aspect = QInputAspect()
-view.registerAspect(aspect)
+        # Root entity.
+        self.rootEntity = QEntity()
 
-# Root entity.
-rootEntity = QEntity()
+        # Camera.
+        cameraEntity = view.camera()
 
-# Camera.
-cameraEntity = view.camera()
+        cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
+        cameraEntity.setPosition(QVector3D(0.0, 24.0, -0.5))
+        cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
+        cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 
-cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-cameraEntity.setPosition(QVector3D(0.0, 24.0, -0.5))
-cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
-cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
+        # Light
+        lightEntity = QEntity(self.rootEntity)
+        light = QPointLight(lightEntity)
+        light.setColor(QColor.fromRgbF(0.6, 0.6, 0.8, 1.0))
+        light.setIntensity(2)
+        lightEntity.addComponent(light)
+        lightTransform = QTransform(lightEntity)
+        lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))
+        lightEntity.addComponent(lightTransform)
 
-# Light
-lightEntity = QEntity(rootEntity)
-light = QPointLight(lightEntity)
-light.setColor(QColor.fromRgbF(0.6, 0.6, 0.8, 1.0))
-light.setIntensity(2)
-lightEntity.addComponent(light)
-lightTransform = QTransform(lightEntity)
-lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))
-lightEntity.addComponent(lightTransform)
+        # For camera controls.
+        # camController = QFirstPersonCameraController(rootEntity)
+        # camController.setCamera(cameraEntity)
 
-# For camera controls.
-# camController = QFirstPersonCameraController(rootEntity)
-# camController.setCamera(cameraEntity)
+        # Set root object of the scene.
+        view.setRootEntity(self.rootEntity)
+        self.loadScene()
 
-# Scene modifier.
-modifier = SceneModifier(rootEntity)
 
-moveLeft = QPushButton(text="Left")
-moveLeft.clicked.connect(modifier.transformLeft)
-moveLeft.setAutoRepeat(True)
+        # Show the window.
+        widget.show()
+        widget.resize(1200, 800)
+        sys.exit(app.exec_())
 
-moveRight = QPushButton(text="Right")
-moveRight.clicked.connect(modifier.transformRight)
-moveRight.setAutoRepeat(True)
+    def loadScene(self):
 
-moveUp = QPushButton(text="Up")
-moveUp.clicked.connect(modifier.transformUp)
-moveUp.setAutoRepeat(True)
+        # Scene modifier.
+        modifier = SceneModifier(self.rootEntity)
 
-moveDown = QPushButton(text="Down")
-moveDown.clicked.connect(modifier.transformDown)
-moveDown.setAutoRepeat(True)
+        moveLeft = QPushButton(text="Left")
+        moveLeft.clicked.connect(modifier.transformLeft)
+        moveLeft.setAutoRepeat(True)
 
-scaleDown = QPushButton(text="Scale Down")
-scaleDown.clicked.connect(modifier.scaleDown)
-scaleDown.setAutoRepeat(True)
+        moveRight = QPushButton(text="Right")
+        moveRight.clicked.connect(modifier.transformRight)
+        moveRight.setAutoRepeat(True)
 
-scaleUp = QPushButton(text="Scale Up")
-scaleUp.clicked.connect(modifier.scaleUp)
-scaleUp.setAutoRepeat(True)
+        moveUp = QPushButton(text="Up")
+        moveUp.clicked.connect(modifier.transformUp)
+        moveUp.setAutoRepeat(True)
 
-vLayout.addWidget(moveLeft)
-vLayout.addWidget(moveRight)
-vLayout.addWidget(moveUp)
-vLayout.addWidget(moveDown)
-vLayout.addWidget(scaleUp)
-vLayout.addWidget(scaleDown)
+        moveDown = QPushButton(text="Down")
+        moveDown.clicked.connect(modifier.transformDown)
+        moveDown.setAutoRepeat(True)
 
-# Set root object of the scene.
-view.setRootEntity(rootEntity)
+        scaleDown = QPushButton(text="Scale Down")
+        scaleDown.clicked.connect(modifier.scaleDown)
+        scaleDown.setAutoRepeat(True)
 
-# Show the window.
-widget.show()
-widget.resize(1200, 800)
+        scaleUp = QPushButton(text="Scale Up")
+        scaleUp.clicked.connect(modifier.scaleUp)
+        scaleUp.setAutoRepeat(True)
 
-sys.exit(app.exec_())
+        self.vLayout.addWidget(moveLeft)
+        self.vLayout.addWidget(moveRight)
+        self.vLayout.addWidget(moveUp)
+        self.vLayout.addWidget(moveDown)
+        self.vLayout.addWidget(scaleUp)
+        self.vLayout.addWidget(scaleDown)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+
+    viewer = Viewer3D(app)

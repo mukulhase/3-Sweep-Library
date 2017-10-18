@@ -9,8 +9,7 @@ from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
 def getPoint(point):
     if type(point) == list:
         return np.array(point)
-    return np.array([point.x(), point.y()])
-
+    return point
 
 def roundPoint(point):
     return [int(round(point[0])), int(round(point[1]))]
@@ -53,6 +52,7 @@ class ThreeSweep():
         self.rectPoint1 = None
         self.rectPoint2 = None
         self.weights = None
+        self.inpaintiterations = 6
         pass
 
     def updateState(self, state=None):
@@ -83,7 +83,8 @@ class ThreeSweep():
             self.previousStates.append(self.state)
             self.state = state
         state = self.state
-        locals()[self.state]()
+        if self.state in locals():
+            locals()[self.state]()
 
     def loadImage(self, image):
         ''' Load image into module for processing '''
@@ -103,20 +104,22 @@ class ThreeSweep():
 
     def getEdges(self):
         ''' Run edge detection on the image '''
-        # self.gradient = auto_canny(self.image)
+        if 'grabCutStarted' not in self.previousStates:
+            self.gradient = auto_canny(self.image)
         return self.gradient
         pass
 
-    def grabCut(self):
+    def grabCut(self, topLeft, bottomRight):
+        self.updateState('grabCutStarted')
         img_org = self.image
         img = img_org
         mask = np.zeros(img.shape[:2], np.uint8)
         bgdModel = np.zeros((1, 65), np.float64)
         fgdModel = np.zeros((1, 65), np.float64)
 
-        width = abs(self.rectPoint2.x() - self.rectPoint1.x())
-        height = abs(self.rectPoint2.y() - self.rectPoint1.y())
-        rect = (self.rectPoint1.x(), self.rectPoint1.y(), width, height)
+        width = abs(bottomRight[0] - topLeft[0])
+        height = abs(bottomRight[1] - topLeft[1])
+        rect = (topLeft[0], topLeft[1], width, height)
         cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
 
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
@@ -135,22 +138,24 @@ class ThreeSweep():
         # Fill the mask.
         obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        inpaint_mask = cv2.inpaint(img_org,obj_seg,6,cv2.INPAINT_TELEA)
+        inpaint_mask = cv2.inpaint(img_org,obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
         cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
 
         self.gradient = auto_canny(obj_seg)
+        self.updateState('grabCutEnded')
+
         pass
 
     def setMajor(self, point1, point2):
         ''' Set points for Major Axis '''
-        self.leftMajor = getPoint(point1)
-        self.rightMajor = getPoint(point2)
+        self.leftMajor = point1
+        self.rightMajor = point2
         self.leftContour[self.iter] = self.leftMajor.T
         self.rightContour[self.iter] = self.rightMajor.T
         self.updateState('major')
         pass
     def setMinor(self, point):
-        self.minor = getPoint(point)
+        self.minor = point
         self.sweepPoints[self.iter] = self.minor
         self.updateState('minor')
         pass
@@ -162,6 +167,7 @@ class ThreeSweep():
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
         # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = np.arctan2(diff[1], diff[0])
+        print(theta);
         transformation = np.array([
             [radius, 0, 0, center[0]],
             [0, radius, 0, 0],
@@ -231,7 +237,8 @@ class ThreeSweep():
             foundleft = searchOut([left[0], left[1]], slopeLeft)
             foundright = searchOut([right[0], right[1]], slopeRight)
             if (foundleft is False) or (foundright is False):
-                return [left, right]
+                return None
+                # return [left, right]
             else:
                 return [foundleft, foundright]
             pass
@@ -253,11 +260,12 @@ class ThreeSweep():
             self.previousangle = angle
             self.updateState('startedSweep')
         anglediff = self.previousangle - angle
-        self.previousangle = angle
         newPoints = detectBoundaryPoints(point, shift, self.leftContour[self.iter - 1],
                                          self.rightContour[self.iter - 1], anglediff)
         if newPoints == None:
             return
+        self.previousangle = angle
+
         leftintermediate = generateIntermediatePoints(newPoints[0],self.leftContour[self.iter - 1])
         rightintermediate = generateIntermediatePoints(newPoints[1],self.rightContour[self.iter - 1])
         interNewPoints = filter(lambda x: (x[0] is not False) and (x[1] is not False), zip(leftintermediate, rightintermediate))
@@ -274,7 +282,7 @@ class ThreeSweep():
         # self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
         self.update3DPoints(newPoints)
 
-    def pickPrimitive(self):
+    def generatePrimitive(self):
         ''' To select whether shape will be a circle or square(will be automated in the future) '''
         angles = np.linspace(0, 2 * np.pi, self.primitiveDensity)
         self.primitivePoints = np.array([np.cos(angles), np.sin(angles), np.zeros(self.primitiveDensity)],np.float64)

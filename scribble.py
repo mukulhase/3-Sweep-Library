@@ -6,9 +6,9 @@ import time
 
 import cv2
 import numpy as np
+import Viewer3D
 from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, QColor, QIcon
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor
+from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QWidget)
@@ -28,7 +28,14 @@ from ThreeSweep import ThreeSweep
 threesweep = ThreeSweep()
 last_time = None
 
-# d = shelve.open('config.dat')
+d = shelve.open('config.dat')
+
+
+def getPoint(point):
+    if type(point) == list:
+        return np.array(point)
+    return np.array([point.x(), point.y()])
+
 
 class ScribbleArea(QOpenGLWidget):
     def __init__(self, parent=None):
@@ -62,14 +69,21 @@ class ScribbleArea(QOpenGLWidget):
             self.state = state
         state = (self.state)
         if state == 'Start':
+            self.saveDrawing()
             pass
         elif self.state == 'FirstSweep':
             self.edges = threesweep.getEdges()
             self.setPenColor(Qt.blue)
+            self.plotPoint(self.firstPoint)
+            self.plotPoint(self.secondPoint)
+            self.plotPoint(self.thirdPoint)
             pass
         elif self.state == 'SecondSweep':
             self.setPenColor(Qt.red)
-            threesweep.setMajor(self.firstPoint, self.secondPoint)
+            threesweep.setMajor(getPoint(self.firstPoint), getPoint(self.secondPoint))
+            self.plotPoint(self.firstPoint)
+            self.plotPoint(self.secondPoint)
+            self.plotPoint(self.thirdPoint)
             pass
         elif self.state == 'ThirdSweep':
             # sweep1 = QVector2D(self.firstPoint - self.secondPoint)
@@ -96,13 +110,15 @@ class ScribbleArea(QOpenGLWidget):
             #     self.drawLineWithColor(self.secondPoint, self.thirdPoint, temp=True)
             #     self.drawLineWithColor(self.thirdPoint, fourthPoint, temp=True)
             #     self.drawLineWithColor(fourthPoint, self.firstPoint, temp=True)
-            threesweep.pickPrimitive()
-            threesweep.setMinor(self.thirdPoint)
+            self.plotPoint(self.firstPoint)
+            self.plotPoint(self.secondPoint)
+            self.plotPoint(self.thirdPoint)
+            threesweep.generatePrimitive()
+            threesweep.setMinor(getPoint(self.thirdPoint))
             self.setPenColor(Qt.green)
             pass
-        self.plotPoint(self.firstPoint)
-        self.plotPoint(self.secondPoint)
-        self.plotPoint(self.thirdPoint)
+        elif self.state == "GrabCut":
+            threesweep.grabCut(getPoint(self.rectPoint1), getPoint(self.rectPoint2))
 
     def openImage(self, fileName):
         loadedImage = QImage()
@@ -152,14 +168,12 @@ class ScribbleArea(QOpenGLWidget):
                 pass
             elif self.state == 'ThirdSweep':
                 pass
-            elif self.state == 'DrawRect':
-                self.rectPoint1 = event.pos()
             self.lastPoint = event.pos()
             self.clicked = True
 
     def mouseMoveEvent(self, event):
         if (event.buttons() & Qt.LeftButton) and self.state == 'ThirdSweep':
-            threesweep.addSweepPoint([event.pos().x(), event.pos().y()])
+            threesweep.addSweepPoint(getPoint(event.pos()))
             self.drawLineTo(event.pos())
             global last_time
             if not last_time:
@@ -180,6 +194,11 @@ class ScribbleArea(QOpenGLWidget):
             distance = distance ** 0.5
             self.imagePainter.drawEllipse(center, distance / 2, minor)
 
+        if self.state == 'DrawRect':
+            self.rectPoint2 = event.pos()
+            self.drawGrabCutRectangle()
+            self.update()
+
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton and self.state == 'ThirdSweep':
             self.drawLineTo(event.pos())
@@ -194,9 +213,12 @@ class ScribbleArea(QOpenGLWidget):
             pass
         elif self.state == 'ThirdSweep':
             self.stateUpdate('Complete')
+        elif self.state == 'StartGrabcut':
+            self.rectPoint1 = event.pos()
+            self.stateUpdate('DrawRect')
         elif self.state == 'DrawRect':
             self.rectPoint2 = event.pos()
-            self.drawRectangles()
+            self.stateUpdate('GrabCut')
             self.update()
         elif self.state == 'Complete':
             self.restoreDrawing()
@@ -296,19 +318,20 @@ class ScribbleArea(QOpenGLWidget):
     def startSweep(self):
         self.stateUpdate('Start')
 
-    def drawRectangles(self):
-        self.beforeDraw(False)
+    def drawGrabCutRectangle(self):
+        self.drawRectangle(self.rectPoint1, self.rectPoint2, True)
+
+    def drawRectangle(self, point1, point2, temp=False):
+        if not point1 and not point2:
+            return
+        self.beforeDraw(temp)
+        self.imagePainter.save()
         color = QColor(255, 0, 0)
         color.setNamedColor('#d4d4d4')
         self.imagePainter.setPen(color)
-        print(self.rectPoint1, self.rectPoint2)
-        # self.imagePainter.setBrush(QtGui.QColor(200, 0, 0))
-        width = abs(self.rectPoint2.x() - self.rectPoint1.x())
-        height = abs(self.rectPoint2.y() - self.rectPoint1.y())
-        threesweep.rectPoint1 = self.rectPoint1
-        threesweep.rectPoint2 = self.rectPoint2
-
-        self.imagePainter.drawRect(self.rectPoint1.x(), self.rectPoint1.y(), width, height)
+        self.imagePainter.drawRect(QRect(point1, point2))
+        self.afterDraw(temp)
+        self.imagePainter.restore()
 
     def resizeImage(self, image, newSize):
         if image.size() == newSize:
@@ -319,6 +342,7 @@ class ScribbleArea(QOpenGLWidget):
         painter = QPainter(newImage)
         painter.drawImage(QPoint(0, 0), image)
         self.image = newImage
+        painter.end()
 
     def print_(self):
         printer = QPrinter(QPrinter.HighResolution)
@@ -343,8 +367,8 @@ class ScribbleArea(QOpenGLWidget):
     def penWidth(self):
         return self.myPenWidth
 
-    def startDrawRect(self):
-        self.stateUpdate('DrawRect')
+    def startGrabCut(self):
+        self.stateUpdate('StartGrabcut')
 
     # Covert numpy array to QImage // error in line 4
     def toQImage(self, im, copy=False):
@@ -471,11 +495,9 @@ class MainWindow(QMainWindow):
         self.startSweepAct = QAction("&Start Sweeping..", self,
                                      triggered=self.scribbleArea.startSweep)
 
-        self.drawRectAct = QAction("&Draw Rectangle", self,
-                                   triggered=self.scribbleArea.startDrawRect)
+        self.drawRectAct = QAction("&Grab Cut", self,
+                                   triggered=self.scribbleArea.startGrabCut)
 
-        self.grabCutAct = QAction("&Grab Cut", self,
-                                  triggered=threesweep.grabCut)
 
         self.clearScreenAct = QAction("&Clear Screen", self, shortcut="Ctrl+L",
                                       triggered=self.scribbleArea.clearImage)
@@ -517,8 +539,6 @@ class MainWindow(QMainWindow):
         tb = self.addToolBar('Image Processing')
         tb.addAction(self.drawRectAct)
         tb.addAction(self.startSweepAct)
-        tb.addAction(self.grabCutAct)
-
 
     def maybeSave(self):
         if self.scribbleArea.isModified():
@@ -551,4 +571,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    viewer = Viewer3D.Viewer3D(app)
+    viewer.loadScene()
+
     sys.exit(app.exec_())
