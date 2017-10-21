@@ -7,3 +7,4 @@ output.ply
 .idea/
 qt_3dviewer/app.pro.user
 build-app-Desktop_Qt_5_9_1_GCC_64bit-Debug
+*.obj
