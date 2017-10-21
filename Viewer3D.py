@@ -14,8 +14,7 @@ from PyQt5.Qt3DExtras import (Qt3DWindow, QDiffuseMapMaterial,
         QPhongMaterial, QPlaneMesh)
 
 from PyQt5.Qt3DInput import QInputAspect
-from PyQt5.Qt3DRender import QCamera, QCameraLens, QMesh, QTextureImage, QPointLight, QObjectPicker
-
+from PyQt5.Qt3DRender import QCamera, QCameraLens, QMesh, QTextureImage, QPointLight, QObjectPicker, QGeometryRenderer, QGeometry, QBuffer
 class PlaneEntity(QEntity):
 
     def __init__(self, parent=None):
@@ -113,7 +112,7 @@ class SceneModifier(QObject):
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
         self.obj = MainObject(self.m_rootEntity)
-        self.obj.setPosition(QVector3D(0.0, 5.0, 0.0))
+        self.obj.setPosition(QVector3D(0.0, 0.0, 0.0))
         self.obj.setScale(0.05)
 
     @pyqtSlot()
@@ -232,6 +231,27 @@ class Viewer3D():
         self.vLayout.addWidget(moveDown)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
+
+    # def createTriangles(self, v0, v1, v2, c0, c1, c2):
+    #     customMeshRenderer = QGeometryRenderer()
+    #     customGeometry = QGeometry(customMeshRenderer)
+    #
+    #     vertexDataBuffer = QBuffer('VertexBuffer', customGeometry)
+    #     indexDataBuffer = QBuffer('IndexBuffer', customGeometry)
+    #     v3 = v2
+    #     ## Faces Normals
+    #     n023 = QVector3D.normal(v0, v2, v3)
+    #     n012 = QVector3D.normal(v0, v1, v2)
+    #     n310 = QVector3D.normal(v3, v1, v0)
+    #     n132 = QVector3D.normal(v1, v3, v2)
+    #
+    #     ## Vector Normals
+    #     n0 = QVector3D(n023 + n012 + n310).normalized()
+    #     n1 = QVector3D(n132 + n012 + n310).normalized()
+    #     n2 = QVector3D(n132 + n012 + n023).normalized()
+    #     n3 = QVector3D(n132 + n310 + n023).normalized()
+        
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

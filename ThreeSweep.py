@@ -161,7 +161,8 @@ class ThreeSweep():
         pass
 
     def update3DPoints(self, newPoints):
-        center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2
+        center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2 - self.minor
+        print(center)
         diff = newPoints[0] - newPoints[1]
         radius = ((diff[1]**2 + diff[0]**2)**(0.5))/2
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
