@@ -184,8 +184,8 @@ lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))
 lightEntity.addComponent(lightTransform)
 
 # For camera controls.
-# camController = QFirstPersonCameraController(rootEntity)
-# camController.setCamera(cameraEntity)
+camController = QFirstPersonCameraController(rootEntity)
+camController.setCamera(cameraEntity)
 
 # Scene modifier.
 modifier = SceneModifier(rootEntity)

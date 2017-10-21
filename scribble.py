@@ -571,7 +571,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    viewer = Viewer3D.Viewer3D(app)
-    viewer.loadScene()
+    # viewer = Viewer3D.Viewer3D(app)
+    # viewer.loadScene()
 
     sys.exit(app.exec_())
