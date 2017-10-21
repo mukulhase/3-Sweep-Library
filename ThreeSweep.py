@@ -2,7 +2,7 @@ import pdb
 
 import cv2
 import numpy as np
-
+import copy
 from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
 
 
@@ -334,7 +334,10 @@ class ThreeSweep():
         # self.plot3DArray(self.objectPoints)
         def getallPoints(p1, p2):
             (interpolated1, interpolated2) = self.getPointsBetween(p1, p2, self.primitiveDensity / 2)
-            return np.array([interpolated1, interpolated2], dtype=int).T.tolist() * 2
+            semicolor = np.array([interpolated1, interpolated2], dtype=int).T.tolist()
+            semicolor_reverse = copy.copy(semicolor)
+            semicolor_reverse.reverse()
+            return semicolor + semicolor_reverse
 
         for i in range(self.iter):
             self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
