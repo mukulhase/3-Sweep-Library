@@ -39,7 +39,7 @@ void MainWindow::open()
         {
             modifier->loadImage(fileName);
             setCurrentFile(fileName);
-//            loadPLY(fileName);
+            loadPLY(fileName);
             statusBar()->showMessage(tr("File loaded"), 2000);
         }
     }
@@ -208,7 +208,7 @@ void MainWindow::loadPLY(const QString &fileName)
 void MainWindow::setCurrentFile(const QString &fileName)
 {
     curFile = fileName;
-    
+
     setWindowModified(false);
 
     QString shownName = curFile;
