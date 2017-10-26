@@ -23,7 +23,7 @@ from PyQt5.QtGui import (QBrush, QColor, QFontMetrics, QImage, QPainter,
 from PyQt5.QtWidgets import QApplication, QOpenGLWidget
 from PyQt5.QtGui import qBlue,qRed,qGreen
 
-from ThreeSweep import ThreeSweep
+from ThreeSweep import ThreeSweep, generateEllipse
 
 threesweep = ThreeSweep()
 last_time = None
@@ -187,12 +187,17 @@ class ScribbleArea(QOpenGLWidget):
 
         if self.state == 'SecondSweep':
             self.drawLineWithColor(self.secondPoint, event.pos(), temp=True)
-            distance = (self.firstPoint - self.secondPoint)
-            center = (self.firstPoint + self.secondPoint) / 2
-            minor = (center - event.pos()).y()
-            distance = (distance.x()) ** 2 + (distance.y()) ** 2
-            distance = distance ** 0.5
-            self.imagePainter.drawEllipse(center, distance / 2, minor)
+            first = getPoint(self.firstPoint)
+            second = getPoint(self.secondPoint)
+            distance = np.linalg.norm(first - second)
+            center = (first + second) / 2
+            minor = np.linalg.norm(center - getPoint(event.pos()))
+            angle = np.arctan2((first[1] - second[1]),(first[0] - second[0]))
+            a = generateEllipse(distance/2, minor, angle, 40 ,center)
+            # self.imagePainter.drawEllipse(center, distance / 2, minor)
+            for i in a.T:
+                self.plotPoint(i, False)
+
 
         if self.state == 'DrawRect':
             self.rectPoint2 = event.pos()
@@ -291,10 +296,14 @@ class ScribbleArea(QOpenGLWidget):
 
     def plotPoint(self, point, temp=False):
         self.beforeDraw(temp)
-        if not point:
+        if point is None:
             return
         self.imagePainter.setPen(QPen(self.myPenColor, 10,
                                       Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        if type(point) == np.ndarray or type(point) == list:
+            x = int(round(point[0]))
+            y = int(round(point[1]))
+            point = QPoint(x, y)
         self.imagePainter.drawPoint(point)
         self.afterDraw(temp)
         self.update()

@@ -14,6 +14,21 @@ def getPoint(point):
 def roundPoint(point):
     return [int(round(point[0])), int(round(point[1]))]
 
+def generateEllipse(a, b, rot, count, center):
+    theta = np.linspace(0, 2 * np.pi, count)
+    r = 1 / np.sqrt((np.cos(theta)) ** 2 + (np.sin(theta)) ** 2)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+    data = np.array([x, y])
+    S = np.array([[a, 0], [0, b]])
+    R = np.array([[np.cos(rot), -np.sin(rot)], [np.sin(rot), np.cos(rot)]])
+    T = np.dot(R, S)
+    data = np.dot(T, data)
+    data[1] += center[1]
+    data[0] += center[0]
+    return (data)
+
+
 def auto_canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
@@ -73,6 +88,10 @@ class ThreeSweep():
                 self.updateState('primitiveSelected')
 
         def primitiveSelected():
+            center = self.leftMajor + self.rightMajor
+            minor = np.linalg.norm(center - self.minor)
+            major = np.linalg.norm(self.leftMajor - self.rightMajor)
+            self.ratio = 2*major/minor
             self.iter += 1
             self.update3DPoints([self.leftContour[0], self.rightContour[0]])
 
@@ -168,17 +187,18 @@ class ThreeSweep():
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
         # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = np.arctan2(diff[1], diff[0])
-        print(theta);
+        print(theta, np.cos(theta), np.sin(theta))
         transformation = np.array([
-            [radius, 0, 0, center[0]],
+            [radius, 0, 0, 0],
             [0, radius, 0, 0],
-            [0, 0, 1, -center[1]],
+            [0, 0, 1, 0],
             [0, 0, 0, 1]], dtype=np.float)
         rotation = np.array([
-            [np.cos(theta), 0, np.sin(theta), 0],
+            [np.cos(theta), 0, np.sin(theta), center[0]],
             [0, 1, 0, 0],
-            [-np.sin(theta), 0, np.cos(theta), 0],
+            [-np.sin(theta), 0, np.cos(theta), -center[1]],
             [0, 0, 0, 1]],dtype=np.float)
+        print(rotation)
         tr = np.matmul(transformation,rotation)
         affineTrans = np.matmul(tr, scaled)
         if (self.objectPoints.any()):
@@ -191,6 +211,16 @@ class ThreeSweep():
         rayx = np.linspace(float(p1[0]), float(p2[0]),quantity, dtype=int)
         rayy = np.linspace(float(p1[1]), float(p2[1]),quantity, dtype=int)
         return (rayx, rayy)
+
+    def getEllipticalPointsBetween(self, ratio, first, second, 20):
+        first = getPoint(self.firstPoint)
+        second = getPoint(self.secondPoint)
+        distance = np.linalg.norm(first - second)
+        center = (first + second) / 2
+        minor = distance * ratio
+        angle = np.arctan2((first[1] - second[1]), (first[0] - second[0]))
+        a = generateEllipse(distance / 2, minor, angle, 40, center)
+        return a
 
 
     def addSweepPoint(self, point):
