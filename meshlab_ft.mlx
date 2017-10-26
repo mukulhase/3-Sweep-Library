@@ -1,0 +1,29 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Merge Close Vertices">
+  <Param type="RichAbsPerc" value="0.752251" min="0" name="Threshold" max="5.78654"/>
+ </filter>
+ <filter name="Remove Duplicate Faces"/>
+ <filter name="Remove Duplicated Vertex"/>
+ <filter name="HC Laplacian Smooth"/>
+ <filter name="Laplacian Smooth">
+  <Param type="RichInt" value="3" name="stepSmoothNum"/>
+  <Param type="RichBool" value="true" name="Boundary"/>
+  <Param type="RichBool" value="true" name="cotangentWeight"/>
+  <Param type="RichBool" value="false" name="Selected"/>
+ </filter>
+ <filter name="Parametrization: Trivial Per-Triangle ">
+  <Param type="RichInt" value="0" name="sidedim"/>
+  <Param type="RichInt" value="2024" name="textdim"/>
+  <Param type="RichInt" value="2" name="border"/>
+  <Param enum_val0="Basic" enum_val1="Space-optimizing" enum_cardinality="2" type="RichEnum" value="0" name="method"/>
+ </filter>
+ <filter name="Vertex Color to Texture">
+  <Param type="RichString" value="output_color.png" name="textName"/>
+  <Param type="RichInt" value="2024" name="textW"/>
+  <Param type="RichInt" value="2024" name="textH"/>
+  <Param type="RichBool" value="false" name="overwrite"/>
+  <Param type="RichBool" value="false" name="assign"/>
+  <Param type="RichBool" value="true" name="pullpush"/>
+ </filter>
+</FilterScript>

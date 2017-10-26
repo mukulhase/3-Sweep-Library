@@ -67,7 +67,7 @@ class MainObject(QEntity):
         self.m_objectMaterial.diffuse().addTextureImage(self.m_objectImage)
         self.m_objectMaterial.normal().addTextureImage(self.m_objectNormalImage)
 
-        self.m_objectImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/color.png') )
+        self.m_objectImage.setSource( QUrl.fromLocalFile('output_color.png') )
         self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/normal.png') )
     
         self.m_objectMaterial.setShininess(80.0)
@@ -176,8 +176,8 @@ cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 # Light
 lightEntity = QEntity(rootEntity)
 light = QPointLight(lightEntity)
-light.setColor(QColor.fromRgbF(0.6, 0.6, 0.8, 1.0))
-light.setIntensity(2)
+light.setColor(QColor.fromRgbF(1.0, 1.0, 1.0, 1.0))
+light.setIntensity(1)
 lightEntity.addComponent(light)
 lightTransform = QTransform(lightEntity)
 lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))

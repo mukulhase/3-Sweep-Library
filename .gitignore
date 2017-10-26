@@ -8,3 +8,6 @@ output.ply
 qt_3dviewer/app.pro.user
 build-app-Desktop_Qt_5_9_1_GCC_64bit-Debug
 *.obj
+output.obj
+output.obj.mtl
+output_color.png
