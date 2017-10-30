@@ -249,6 +249,8 @@ class ScribbleArea(QOpenGLWidget):
             checkAndPlot(i)
         for i in threesweep.rightContour[:threesweep.iter]:
             checkAndPlot(i)
+        for i in threesweep.colorIndices:
+            checkAndPlot(i)
         if threesweep.test:
             for i in threesweep.test:
                 checkAndPlot(i)
@@ -435,7 +437,7 @@ class MainWindow(QMainWindow):
                 image = cv2.imread(fileName)
                 threesweep.loadImage(image)
                 threesweep.loadedimage = image
-                # d['lastopened'] = fileName
+                d['lastopened'] = fileName
 
     def openLast(self):
         if 'lastopened' in d:

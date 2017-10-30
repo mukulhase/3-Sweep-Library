@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import copy
 from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
+import transformations as trans
 
 
 def getPoint(point):
@@ -91,7 +92,7 @@ class ThreeSweep():
             center = self.leftMajor + self.rightMajor
             minor = np.linalg.norm(center - self.minor)
             major = np.linalg.norm(self.leftMajor - self.rightMajor)
-            self.ratio = 2*major/minor
+            self.ratio = major/(minor*2)
             self.iter += 1
             self.update3DPoints([self.leftContour[0], self.rightContour[0]])
 
@@ -125,6 +126,7 @@ class ThreeSweep():
         ''' Run edge detection on the image '''
         if 'grabCutStarted' not in self.previousStates:
             self.gradient = auto_canny(self.image)
+        self.gradient = cv2.blur(self.gradient, (2,2))
         return self.gradient
         pass
 
@@ -181,45 +183,33 @@ class ThreeSweep():
 
     def update3DPoints(self, newPoints):
         center = sum([np.array(roundPoint(x)) for x in newPoints]) / 2 - self.minor
-        print(center)
         diff = newPoints[0] - newPoints[1]
         radius = ((diff[1]**2 + diff[0]**2)**(0.5))/2
         scaled = np.concatenate((self.primitivePoints, np.ones((1, np.shape(self.primitivePoints)[1]))), axis=0)
-        # scaled = np.append(self.primitivePoints,np.ones(np.shape(self.primitivePoints)[1]))
         theta = np.arctan2(diff[1], diff[0])
-        print(theta, np.cos(theta), np.sin(theta))
-        transformation = np.array([
-            [radius, 0, 0, 0],
-            [0, radius, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]], dtype=np.float)
-        rotation = np.array([
-            [np.cos(theta), 0, np.sin(theta), center[0]],
-            [0, 1, 0, 0],
-            [-np.sin(theta), 0, np.cos(theta), -center[1]],
-            [0, 0, 0, 1]],dtype=np.float)
-        print(rotation)
-        tr = np.matmul(transformation,rotation)
-        affineTrans = np.matmul(tr, scaled)
+        zaxis = [0,1,0]
+        rotation = trans.rotation_matrix(theta, zaxis)
+        scale = trans.scale_matrix(radius)
+        translation = trans.translation_matrix([center[0], 0, -center[1]])
+        complete = trans.concatenate_matrices(translation, rotation, scale)
+        affineTrans = np.matmul(complete, scaled)
+
         if (self.objectPoints.any()):
             self.objectPoints = np.concatenate((self.objectPoints,np.transpose(affineTrans)), axis=0)
         else:
             self.objectPoints = np.transpose(affineTrans)
-        # self.updatePlot(np.transpose(affineTrans))
 
     def getPointsBetween(self, p1, p2, quantity):
         rayx = np.linspace(float(p1[0]), float(p2[0]),quantity, dtype=int)
         rayy = np.linspace(float(p1[1]), float(p2[1]),quantity, dtype=int)
         return (rayx, rayy)
 
-    def getEllipticalPointsBetween(self, ratio, first, second, 20):
-        first = getPoint(self.firstPoint)
-        second = getPoint(self.secondPoint)
+    def getEllipticalPointsBetween(self, first, second, count):
         distance = np.linalg.norm(first - second)
         center = (first + second) / 2
-        minor = distance * ratio
+        minor = distance * self.ratio
         angle = np.arctan2((first[1] - second[1]), (first[0] - second[0]))
-        a = generateEllipse(distance / 2, minor, angle, 40, center)
+        a = generateEllipse(distance / 2, minor, angle, count, center)
         return a
 
 
@@ -368,9 +358,17 @@ class ThreeSweep():
             semicolor_reverse = copy.copy(semicolor)
             semicolor_reverse.reverse()
             return semicolor + semicolor_reverse
+            #
+            # points = self.getEllipticalPointsBetween(p1, p2, self.primitiveDensity)
+            # points = np.array(points, dtype=int).T.tolist()
+            # points = points[0:int(len(points)/2)]
+            # points_reverse = copy.copy(points)
+            # points_reverse.reverse()
+            # return points + points_reverse
 
         for i in range(self.iter):
             self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
+
         self.generateTriSurf()
         pass
