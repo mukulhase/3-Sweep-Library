@@ -1,5 +1,5 @@
 import pdb
-
+import os
 import cv2
 import numpy as np
 import copy
@@ -371,4 +371,5 @@ class ThreeSweep():
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
 
         self.generateTriSurf()
+        os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
         pass
