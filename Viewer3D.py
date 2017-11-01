@@ -97,6 +97,18 @@ class SceneModifier(QObject):
         self.normalDiffuseSpecularMapMaterial.setShininess(80.0)
         self.normalDiffuseSpecularMapMaterial.setAmbient(QColor.fromRgbF(1.0, 1.0, 1.0, 1.0))
 
+        diffuseImage = QTextureImage()
+        diffuseImage.setSource( QUrl.fromLocalFile('loading.png') )
+        self.normalDiffuseSpecularMapMaterial.diffuse().addTextureImage(diffuseImage)
+        background = QImage()
+        background.load('loading.png')
+
+        self.planeEntity = PlaneEntity(self.m_rootEntity)
+        self.planeEntity.mesh().setHeight(20.0)
+        self.planeEntity.mesh().setWidth(20.0 * background.width() / background.height())
+        self.planeEntity.mesh().setMeshResolution(QSize(5, 5))
+        self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
+
     @pyqtSlot()
     def loadscene(self):
         diffuseImage = QTextureImage()
@@ -106,15 +118,11 @@ class SceneModifier(QObject):
         background.load('output.png')
 
         # Background Plane
-        self.planeEntity = PlaneEntity(self.m_rootEntity)
-        self.planeEntity.mesh().setHeight(20.0)
         self.planeEntity.mesh().setWidth(20.0 * background.width() / background.height())
-        self.planeEntity.mesh().setMeshResolution(QSize(5, 5))
-
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
         self.obj = MainObject(self.m_rootEntity)
-        self.obj.setPosition(QVector3D(0.0, 0.0, 0.0))
+        self.obj.setPosition(QVector3D( - (self.planeEntity.mesh().width() / 2) * 0.0, 0.0, - (self.planeEntity.mesh().height() / 2) * 0.0))
         self.obj.setScale(0.05)
 
     @pyqtSlot()

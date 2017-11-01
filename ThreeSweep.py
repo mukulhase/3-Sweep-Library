@@ -160,7 +160,7 @@ class ThreeSweep():
         obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
         inpaint_mask = cv2.inpaint(img_org,obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-        cv2.imwrite('output.png',inpaint_mask.astype('uint8'))
+        cv2.imwrite('output.png',cv2.flip( inpaint_mask.astype('uint8'), 1 ))
 
         self.gradient = auto_canny(obj_seg)
         self.updateState('grabCutEnded')
