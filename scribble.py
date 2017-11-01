@@ -30,7 +30,6 @@ last_time = None
 
 d = shelve.open('config.dat')
 
-
 def getPoint(point):
     if type(point) == list:
         return np.array(point)
@@ -61,6 +60,7 @@ class ScribbleArea(QOpenGLWidget):
         self.lastPoint = QPoint()
         self.imagePainter = None
         self.edges = None
+        self.app = None
 
     def stateUpdate(self, state=None):
         if state == None:
@@ -408,11 +408,10 @@ class MainWindow(QMainWindow):
 
         self.scribbleArea = ScribbleArea()
         self.setCentralWidget(self.scribbleArea)
-
         self.createActions()
         self.createMenus()
         self.createToolBar()
-
+        self.app = None
         self.setWindowTitle("3-Sweep")
         self.resize(1500, 1500)
 
@@ -577,12 +576,9 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    import sys
 
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    # viewer = Viewer3D.Viewer3D(app)
-    # viewer.loadScene()
-
+    viewer = Viewer3D.Viewer3D(app)
     sys.exit(app.exec_())

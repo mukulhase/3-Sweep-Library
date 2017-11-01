@@ -97,6 +97,8 @@ class SceneModifier(QObject):
         self.normalDiffuseSpecularMapMaterial.setShininess(80.0)
         self.normalDiffuseSpecularMapMaterial.setAmbient(QColor.fromRgbF(1.0, 1.0, 1.0, 1.0))
 
+    @pyqtSlot()
+    def loadscene(self):
         diffuseImage = QTextureImage()
         diffuseImage.setSource( QUrl.fromLocalFile('output.png') )
         self.normalDiffuseSpecularMapMaterial.diffuse().addTextureImage(diffuseImage)
@@ -188,17 +190,7 @@ class Viewer3D():
 
         # Set root object of the scene.
         view.setRootEntity(self.rootEntity)
-        self.loadScene()
 
-
-        # Show the window.
-        widget.show()
-        widget.resize(1200, 800)
-        sys.exit(app.exec_())
-
-    def loadScene(self):
-
-        # Scene modifier.
         modifier = SceneModifier(self.rootEntity)
 
         moveLeft = QPushButton(text="Left")
@@ -225,12 +217,22 @@ class Viewer3D():
         scaleUp.clicked.connect(modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
+        loadModel = QPushButton(text="Load Model")
+        loadModel.clicked.connect(modifier.loadscene)
+
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
         self.vLayout.addWidget(moveUp)
         self.vLayout.addWidget(moveDown)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
+        self.vLayout.addWidget(loadModel)
+
+        # Show the window.
+        widget.show()
+        widget.resize(1200, 800)
+        sys.exit(app.exec_())
+
 
     # def createTriangles(self, v0, v1, v2, c0, c1, c2):
     #     customMeshRenderer = QGeometryRenderer()
