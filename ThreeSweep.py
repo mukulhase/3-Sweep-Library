@@ -68,7 +68,9 @@ class ThreeSweep():
         self.rectPoint1 = None
         self.rectPoint2 = None
         self.weights = None
-        self.inpaintiterations = 6
+        self.inpaintiterations = 15
+        self.obj_seg = None
+        self.img_org = None
         pass
 
     def updateState(self, state=None):
@@ -132,8 +134,8 @@ class ThreeSweep():
 
     def grabCut(self, topLeft, bottomRight):
         self.updateState('grabCutStarted')
-        img_org = self.image
-        img = img_org
+        self.img_org = self.image
+        img = self.img_org
         mask = np.zeros(img.shape[:2], np.uint8)
         bgdModel = np.zeros((1, 65), np.float64)
         fgdModel = np.zeros((1, 65), np.float64)
@@ -157,12 +159,9 @@ class ThreeSweep():
                            [0, 0, 1, 0, 0]], np.uint8)
 
         # Fill the mask.
-        obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        self.obj_seg = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        inpaint_mask = cv2.inpaint(img_org,obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-        cv2.imwrite('output.png',cv2.flip( inpaint_mask.astype('uint8'), 1 ))
-
-        self.gradient = auto_canny(obj_seg)
+        self.gradient = auto_canny(self.obj_seg)
         self.updateState('grabCutEnded')
 
         pass
@@ -371,5 +370,11 @@ class ThreeSweep():
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
 
         self.generateTriSurf()
+
+        # InPaint to Generate Background Image
+        inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
+        cv2.imwrite('output.png',cv2.flip( inpaint_mask.astype('uint8'), 1 ))
+
+        # Merge Vertices, Smoothing, Export Textures and Model to OBJ
         os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
         pass
