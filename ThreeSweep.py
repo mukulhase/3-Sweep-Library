@@ -1,10 +1,11 @@
-import pdb
+import copy
 import os
+
 import cv2
 import numpy as np
-import copy
-from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
+
 import transformations as trans
+from ply_template import TEMPLATE_PLY_FILE, TEMPLATE_VERTEX, TEMPLATE_FACES
 
 
 def getPoint(point):
@@ -113,15 +114,10 @@ class ThreeSweep():
         if isinstance(image, str):
             self.filename = image
             self.image = cv2.imread(image,0)
+            self.img_org = cv2.imread(image)
         else:
             self.image = image
         self.updateState('loadedImage')
-        pass
-
-    def showImage(self):
-        ''' Show image '''
-        cv2.imshow('img', self.image)
-        cv2.waitKey(0)
         pass
 
     def getEdges(self):
@@ -134,7 +130,6 @@ class ThreeSweep():
 
     def grabCut(self, topLeft, bottomRight):
         self.updateState('grabCutStarted')
-        self.img_org = self.image
         img = self.img_org
         mask = np.zeros(img.shape[:2], np.uint8)
         bgdModel = np.zeros((1, 65), np.float64)
@@ -318,7 +313,7 @@ class ThreeSweep():
         triangles = np.array(genEdges())
         pass
 
-    def generateTriSurf(self):
+    def generatePLY(self):
         def genEdges():
             topleft = [[x, x+self.primitiveDensity, x+self.primitiveDensity+1] for x in range(len(self.objectPoints)-self.primitiveDensity - 1)]
             topright = [[x + 1, x, x + self.primitiveDensity + 1] for x in range(len(self.objectPoints) - self.primitiveDensity -1)]
@@ -334,7 +329,7 @@ class ThreeSweep():
         triangles = np.array(genEdges())
         points = points[:, :-1].astype(np.int)
         colorindices = np.array(self.colorIndices).T
-        colors = self.loadedimage[colorindices[1], colorindices[0]]
+        colors = self.img_org[colorindices[1], colorindices[0]]
         text = TEMPLATE_PLY_FILE % {
             "nPoints"  : points.shape[0],
             "nFacepoints" : triangles.shape[0],
@@ -344,12 +339,9 @@ class ThreeSweep():
 
         text = text.replace(',', '').replace('{', '').replace('}', '').replace('{', '').replace('[', '').replace(']', '')
         text = "".join([s for s in text.strip().splitlines(True) if s.strip()])
+        return text
 
-        f = open("output.ply", "w")
-        f.write(text)
-        f.close()
-
-    def end(self):
+    def export(self, name):
         # self.plot3DArray(self.objectPoints)
         def getallPoints(p1, p2):
             (interpolated1, interpolated2) = self.getPointsBetween(p1, p2, self.primitiveDensity / 2)
@@ -369,12 +361,14 @@ class ThreeSweep():
             self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
 
-        self.generateTriSurf()
+        data = self.generatePLY()
+        f = open(name + ".ply", "w")
+        f.write(data)
+        f.close()
 
         # InPaint to Generate Background Image
         inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-        cv2.imwrite('output.png',cv2.flip( inpaint_mask.astype('uint8'), 1 ))
-
+        cv2.imwrite(name + '.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
         # Merge Vertices, Smoothing, Export Textures and Model to OBJ
         os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
         pass

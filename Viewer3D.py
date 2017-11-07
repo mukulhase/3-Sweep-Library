@@ -1,20 +1,16 @@
 import sys
 
-from PyQt5.QtCore import pyqtSlot, QObject, QSize, Qt, QUrl, pyqtSignal
-from PyQt5.QtGui import QColor, QQuaternion, QVector3D, QMatrix4x4, QImage, QGuiApplication, QKeySequence
-
-from PyQt5.QtWidgets import (QAction, QApplication, QCheckBox, QCommandLinkButton, QMenu,
-        QHBoxLayout, QVBoxLayout, QWidget, QMainWindow, QShortcut, QPushButton)
-
 from PyQt5.Qt3DCore import QEntity, QTransform
-
-from PyQt5.Qt3DExtras import (Qt3DWindow, QDiffuseMapMaterial,
-        QFirstPersonCameraController, QNormalDiffuseMapAlphaMaterial,
-        QNormalDiffuseMapMaterial, QNormalDiffuseSpecularMapMaterial,
-        QPhongMaterial, QPlaneMesh)
-
+from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController, QNormalDiffuseMapMaterial,
+                              QNormalDiffuseSpecularMapMaterial,
+                              QPlaneMesh)
 from PyQt5.Qt3DInput import QInputAspect
-from PyQt5.Qt3DRender import QCamera, QCameraLens, QMesh, QTextureImage, QPointLight, QObjectPicker, QGeometryRenderer, QGeometry, QBuffer
+from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight
+from PyQt5.QtCore import pyqtSlot, QObject, QSize, Qt, QUrl
+from PyQt5.QtGui import QColor, QVector3D, QImage
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton)
+
+
 class PlaneEntity(QEntity):
 
     def __init__(self, parent=None):
@@ -132,7 +128,6 @@ class SceneModifier(QObject):
     @pyqtSlot()
     def transformRight(self):
         self.obj.setPosition(self.obj.position() - QVector3D(0.5, 0.0, 0.0))
-        print(self.obj.position())
 
     @pyqtSlot()
     def transformUp(self):

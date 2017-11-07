@@ -2,30 +2,23 @@
 
 
 import shelve
+import sys
 import time
 
 import cv2
 import numpy as np
-import Viewer3D
-from PyQt5.QtCore import QDir, QPoint, QRect, QSize, Qt
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb, qRgba, QColor, QIcon
+from PyQt5.QtCore import QDir
+from PyQt5.QtCore import (QPoint, QRect, QSize, Qt)
+from PyQt5.QtGui import (QColor, QImage, QPainter)
+from PyQt5.QtGui import QImageWriter, QPen, qRgb, qRgba
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
-from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
-                             QInputDialog, QMainWindow, QMenu, QMessageBox, QWidget)
-
-import sys
-import math, random
-
-from PyQt5.QtCore import (QPoint, QPointF, QRect, QRectF, QSize, Qt, QTime,
-        QTimer)
-from PyQt5.QtGui import (QBrush, QColor, QFontMetrics, QImage, QPainter,
-        QRadialGradient, QSurfaceFormat)
+from PyQt5.QtWidgets import (QAction, QColorDialog, QFileDialog,
+                             QInputDialog, QMainWindow, QMenu, QMessageBox, QStatusBar, QProgressBar)
 from PyQt5.QtWidgets import QApplication, QOpenGLWidget
-from PyQt5.QtGui import qBlue,qRed,qGreen
 
+import Viewer3D
 from ThreeSweep import ThreeSweep, generateEllipse
 
-threesweep = ThreeSweep()
 last_time = None
 
 d = shelve.open('config.dat')
@@ -51,7 +44,8 @@ class ScribbleArea(QOpenGLWidget):
         self.setAttribute(Qt.WA_StaticContents)
         self.modified = False
         self.clicked = False
-        self.state = 'None'
+        self.state = {}
+        self.stateUpdate({'init': False})
         self.myPenWidth = 5
         self.myPenColor = Qt.blue
         self.image = QImage().convertToFormat(5)
@@ -62,30 +56,68 @@ class ScribbleArea(QOpenGLWidget):
         self.edges = None
         self.app = None
 
+    def revertAll(self):
+        self.self.threesweep = ThreeSweep()
+        self.edges = None
+        self.firstPoint = None
+        self.thirdPoint = None
+        self.secondPoint = None
+        self.loadImageToCanvas()
+
+    def revert(self):
+        state = (self.state)
+        if self.state['currentStep'] == 'Start':
+            self.self.threesweep = ThreeSweep()
+            pass
+        elif self.state['currentStep'] == 'FirstSweep':
+            self.statusBar.showMessage('Click to add second point')
+            self.edges = None
+            self.firstPoint = None
+            pass
+        elif self.state['currentStep'] == 'SecondSweep':
+            self.secondPoint = None
+            pass
+        elif self.state['currentStep'] == 'ThirdSweep':
+            self.thirdPoint = None
+            pass
+        elif self.state['currentStep'] == "GrabCut":
+            pass
+        elif self.state['currentStep'] == "DrawRect":
+            pass
+        elif self.state['currentStep'] == "Complete":
+            pass
+
     def stateUpdate(self, state=None):
         if state == None:
             pass
         else:
-            self.state = state
+            print(state)
+            self.state.update(state)
         state = (self.state)
-        if state == 'Start':
+        if self.state['init'] == False:
+            self.threesweep = ThreeSweep()
+            self.stateUpdate({'init': True, 'currentStep': 'Waiting for image'})
+        elif self.state['currentStep'] == 'Start':
+            self.statusBar.showMessage('Click to add a ThreeSweep point')
             self.saveDrawing()
             pass
-        elif self.state == 'FirstSweep':
-            self.edges = threesweep.getEdges()
+        elif self.state['currentStep'] == 'FirstSweep':
+            self.statusBar.showMessage('Click to add second point')
+            self.edges = self.threesweep.getEdges()
             self.setPenColor(Qt.blue)
             self.plotPoint(self.firstPoint)
             self.plotPoint(self.secondPoint)
             self.plotPoint(self.thirdPoint)
             pass
-        elif self.state == 'SecondSweep':
+        elif self.state['currentStep'] == 'SecondSweep':
+            self.statusBar.showMessage('Drag to specify axis')
             self.setPenColor(Qt.red)
-            threesweep.setMajor(getPoint(self.firstPoint), getPoint(self.secondPoint))
+            self.threesweep.setMajor(getPoint(self.firstPoint), getPoint(self.secondPoint))
             self.plotPoint(self.firstPoint)
             self.plotPoint(self.secondPoint)
             self.plotPoint(self.thirdPoint)
             pass
-        elif self.state == 'ThirdSweep':
+        elif self.state['currentStep'] == 'ThirdSweep':
             # sweep1 = QVector2D(self.firstPoint - self.secondPoint)
             # sweep2 = QVector2D(self.thirdPoint - self.secondPoint)
             # cosine_angle = QVector2D.dotProduct(sweep1,sweep2) / (sweep1.length() * sweep2.length())
@@ -113,25 +145,47 @@ class ScribbleArea(QOpenGLWidget):
             self.plotPoint(self.firstPoint)
             self.plotPoint(self.secondPoint)
             self.plotPoint(self.thirdPoint)
-            threesweep.generatePrimitive()
-            threesweep.setMinor(getPoint(self.thirdPoint))
+            self.threesweep.generatePrimitive()
+            self.threesweep.setMinor(getPoint(self.thirdPoint))
             self.setPenColor(Qt.green)
             pass
-        elif self.state == "GrabCut":
-            threesweep.grabCut(getPoint(self.rectPoint1), getPoint(self.rectPoint2))
+
+        elif self.state['currentStep'] == "StartGrabcut":
+            self.statusBar.showMessage('Grabcut: Select 2 points to specify the Bounding Box')
+        elif self.state['currentStep'] == "GrabCut":
+            self.threesweep.grabCut(getPoint(self.rectPoint1), getPoint(self.rectPoint2))
+            self.statusBar.showMessage('Click on "start Sweep" to start')
+        elif self.state['currentStep'] == "DrawRect":
+            self.statusBar.showMessage('Grabcut: Select 2nd point to specify the bottom right')
+        elif self.state['currentStep'] == "Complete":
+            self.progressBar.setValue(75)
+            self.restoreDrawing()
+            self.update()
+            self.threesweep.export('output')
+            self.statusBar.showMessage('Export Completed!')
+            self.progressBar.setValue(100)
+
+
 
     def openImage(self, fileName):
-        loadedImage = QImage()
-        if not loadedImage.load(fileName):
+        self.threesweep.loadImage(fileName)
+        self.loadedImage = QImage()
+        if not self.loadedImage.load(fileName):
             return False
         self.imagePath = fileName
-        newSize = loadedImage.size()
+        self.loadImageToCanvas()
+
+    def loadImageToCanvas(self):
+        newSize = self.loadedImage.size()
         self.resize(newSize)
-        newSize = loadedImage.size().expandedTo(self.size())
-        self.resizeImage(loadedImage, newSize)
-        self.image = loadedImage
+        newSize = self.loadedImage.size().expandedTo(self.size())
+        self.resizeImage(self.loadedImage, newSize)
+        self.image = self.loadedImage
         self.modified = False
-        self.stateUpdate('Start')
+        self.stateUpdate({
+            'currentStep': 'Start',
+            'iteration': 0
+        })
         self.update()
         return True
 
@@ -158,22 +212,24 @@ class ScribbleArea(QOpenGLWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            if self.state == 'Start':
+            if self.state['currentStep'] == 'Start':
                 pass
-            elif self.state == 'FirstSweep':
+            elif self.state['currentStep'] == 'FirstSweep':
                 pass
-            elif self.state == 'SecondSweep':
+            elif self.state['currentStep'] == 'SecondSweep':
                 self.thirdPoint = event.pos()
-                self.stateUpdate('ThirdSweep')
+                self.stateUpdate({
+                    'currentStep': 'ThirdSweep'
+                })
                 pass
-            elif self.state == 'ThirdSweep':
+            elif self.state['currentStep'] == 'ThirdSweep':
                 pass
             self.lastPoint = event.pos()
             self.clicked = True
 
     def mouseMoveEvent(self, event):
-        if (event.buttons() & Qt.LeftButton) and self.state == 'ThirdSweep':
-            threesweep.addSweepPoint(getPoint(event.pos()))
+        if (event.buttons() & Qt.LeftButton) and self.state['currentStep'] == 'ThirdSweep':
+            self.threesweep.addSweepPoint(getPoint(event.pos()))
             self.drawLineTo(event.pos())
             global last_time
             if not last_time:
@@ -181,11 +237,9 @@ class ScribbleArea(QOpenGLWidget):
             if (time.time() - last_time) > 0.1:
                 last_time = time.time()
             self.contourPointsOverlay()
-
-        if self.state == 'FirstSweep':
+        elif self.state['currentStep'] == 'FirstSweep':
             self.drawLineWithColor(self.firstPoint, event.pos(), temp=True)
-
-        if self.state == 'SecondSweep':
+        elif self.state['currentStep'] == 'SecondSweep':
             self.drawLineWithColor(self.secondPoint, event.pos(), temp=True)
             first = getPoint(self.firstPoint)
             second = getPoint(self.secondPoint)
@@ -198,37 +252,34 @@ class ScribbleArea(QOpenGLWidget):
             for i in a.T:
                 self.plotPoint(i, False)
 
-
-        if self.state == 'DrawRect':
+        if self.state['currentStep'] == 'DrawRect':
             self.rectPoint2 = event.pos()
             self.drawGrabCutRectangle()
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton and self.state == 'ThirdSweep':
+        if event.button() == Qt.LeftButton and self.state['currentStep'] == 'ThirdSweep':
             self.drawLineTo(event.pos())
-        if self.state == 'Start':
+        if self.state['currentStep'] == 'Start':
             self.firstPoint = event.pos()
-            self.stateUpdate('FirstSweep')
-        elif self.state == 'FirstSweep':
+            self.stateUpdate({'currentStep': 'FirstSweep'})
+        elif self.state['currentStep'] == 'FirstSweep':
             self.secondPoint = event.pos()
-            self.stateUpdate('SecondSweep')
-        elif self.state == 'SecondSweep':
+            self.stateUpdate({'currentStep': 'SecondSweep'})
+        elif self.state['currentStep'] == 'SecondSweep':
             # self.thirdPoint = event.pos()
             pass
-        elif self.state == 'ThirdSweep':
-            self.stateUpdate('Complete')
-        elif self.state == 'StartGrabcut':
+        elif self.state['currentStep'] == 'ThirdSweep':
+            self.stateUpdate({'currentStep': 'Complete'})
+        elif self.state['currentStep'] == 'StartGrabcut':
             self.rectPoint1 = event.pos()
-            self.stateUpdate('DrawRect')
-        elif self.state == 'DrawRect':
+            self.stateUpdate({'currentStep': 'DrawRect'})
+        elif self.state['currentStep'] == 'DrawRect':
             self.rectPoint2 = event.pos()
-            self.stateUpdate('GrabCut')
+            self.stateUpdate({'currentStep': 'GrabCut'})
             self.update()
-        elif self.state == 'Complete':
-            self.restoreDrawing()
-            threesweep.end()
-            self.update()
+        elif self.state['currentStep'] == 'Complete':
+            pass
 
         self.clicked = False
 
@@ -245,14 +296,14 @@ class ScribbleArea(QOpenGLWidget):
                 self.plotPoint(QPoint(x, y))
                 self.overLayed[x, y] = True
 
-        for i in threesweep.leftContour[:threesweep.iter]:
+        for i in self.threesweep.leftContour[:self.threesweep.iter]:
             checkAndPlot(i)
-        for i in threesweep.rightContour[:threesweep.iter]:
+        for i in self.threesweep.rightContour[:self.threesweep.iter]:
             checkAndPlot(i)
-        for i in threesweep.colorIndices:
+        for i in self.threesweep.colorIndices:
             checkAndPlot(i)
-        if threesweep.test:
-            for i in threesweep.test:
+        if self.threesweep.test:
+            for i in self.threesweep.test:
                 checkAndPlot(i)
 
     def restoreDrawing(self):
@@ -327,7 +378,7 @@ class ScribbleArea(QOpenGLWidget):
         self.drawLineWithColor(self.lastPoint, endPoint, temp=temp)
 
     def startSweep(self):
-        self.stateUpdate('Start')
+        self.stateUpdate({'currentStep': 'Start'})
 
     def drawGrabCutRectangle(self):
         self.drawRectangle(self.rectPoint1, self.rectPoint2, True)
@@ -379,7 +430,7 @@ class ScribbleArea(QOpenGLWidget):
         return self.myPenWidth
 
     def startGrabCut(self):
-        self.stateUpdate('StartGrabcut')
+        self.stateUpdate({'currentStep': 'StartGrabcut'})
 
     # Covert numpy array to QImage // error in line 4
     def toQImage(self, im, copy=False):
@@ -408,12 +459,23 @@ class MainWindow(QMainWindow):
 
         self.scribbleArea = ScribbleArea()
         self.setCentralWidget(self.scribbleArea)
+        # layout = QGridLayout(self.centralWidget())
+        # layout.addWidget(self.editor, 0, 0, 1, 3)
+        # layout.addWidget(button, 1, 1, 1, 1)
         self.createActions()
         self.createMenus()
         self.createToolBar()
         self.app = None
         self.setWindowTitle("3-Sweep")
         self.resize(1500, 1500)
+        self.statusBar = QStatusBar()
+        self.progressBar = QProgressBar()
+        self.statusBar.addPermanentWidget(self.progressBar)
+        self.setStatusBar(self.statusBar)
+        self.progressBar.setGeometry(30, 40, 200, 25)
+        self.progressBar.setValue(100)
+        self.scribbleArea.progressBar = self.progressBar
+        self.scribbleArea.statusBar = self.statusBar
 
     def closeEvent(self, event):
         if self.maybeSave():
@@ -434,8 +496,6 @@ class MainWindow(QMainWindow):
             if fileName:
                 self.scribbleArea.openImage(fileName)
                 image = cv2.imread(fileName)
-                threesweep.loadImage(image)
-                threesweep.loadedimage = image
                 d['lastopened'] = fileName
 
     def openLast(self):
