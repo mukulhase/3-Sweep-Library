@@ -45,7 +45,10 @@ class ScribbleArea(QOpenGLWidget):
         self.modified = False
         self.clicked = False
         self.state = {}
-        self.stateUpdate({'init': False})
+        self.stateUpdate({
+            'init': False,
+            'iteration': 0
+        })
         self.myPenWidth = 5
         self.myPenColor = Qt.blue
         self.image = QImage().convertToFormat(5)
@@ -57,12 +60,15 @@ class ScribbleArea(QOpenGLWidget):
         self.app = None
 
     def revertAll(self):
-        self.self.threesweep = ThreeSweep()
         self.edges = None
         self.firstPoint = None
         self.thirdPoint = None
         self.secondPoint = None
         self.loadImageToCanvas()
+        self.update()
+        self.threesweep = ThreeSweep()
+        self.threesweep.loadImage(self.imagePath)
+
 
     def revert(self):
         state = (self.state)
@@ -91,8 +97,8 @@ class ScribbleArea(QOpenGLWidget):
         if state == None:
             pass
         else:
-            print(state)
             self.state.update(state)
+            print(self.state)
         state = (self.state)
         if self.state['init'] == False:
             self.threesweep = ThreeSweep()
@@ -164,8 +170,13 @@ class ScribbleArea(QOpenGLWidget):
             self.threesweep.export('output')
             self.statusBar.showMessage('Export Completed!')
             self.progressBar.setValue(100)
-
-
+            ret = QMessageBox.question(self, "Scribble",
+                                      "Would you like to add another object?",
+                                      QMessageBox.Yes | QMessageBox.No )
+            if ret == QMessageBox.Yes:
+                return self.revertAll()
+            elif ret == QMessageBox.No:
+                return False
 
     def openImage(self, fileName):
         self.threesweep.loadImage(fileName)
@@ -180,11 +191,10 @@ class ScribbleArea(QOpenGLWidget):
         self.resize(newSize)
         newSize = self.loadedImage.size().expandedTo(self.size())
         self.resizeImage(self.loadedImage, newSize)
-        self.image = self.loadedImage
+        self.image = self.loadedImage.copy()
         self.modified = False
         self.stateUpdate({
             'currentStep': 'Start',
-            'iteration': 0
         })
         self.update()
         return True
@@ -315,7 +325,6 @@ class ScribbleArea(QOpenGLWidget):
         dirtyRect = event.rect()
         painter.drawImage(dirtyRect, self.image, dirtyRect, flags=Qt.NoOpaqueDetection)
         painter.end()
-
         pass
 
     def resizeEvent(self, event):
