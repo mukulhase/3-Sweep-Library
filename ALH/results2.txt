@@ -1,0 +1,11 @@
+Problem 2a
+Iteration: 1 f(x): -18.031813 x: -2.7752      4.1628 e: 0.050000 
+Iteration: 2 f(x): -18.032088 x: -2.7748      4.1623 e: 0.050000 
+Iteration: 1 Newton Steps: 2 Constraint Violation: 0.02408 x: -2.7748      4.1623 
+Augmented Langragian method
+Number of Iterations:  1
+x(1):             -2.7748
+x(2):              4.1623
+f(x):            -18.0364
+g(x):            0.02408
+k:            15.000000
