@@ -1,5 +1,8 @@
 import copy
 import os
+import time
+import threading
+import multiprocessing
 
 import cv2
 import numpy as np
@@ -50,7 +53,6 @@ class ThreeSweep():
         self.previousStates = []
         self.image = None
         self.iter = 0
-        self.loadedimage = None
         self.straightAxis = False
         self.leftContour = None
         self.test = None
@@ -341,6 +343,28 @@ class ThreeSweep():
         text = "".join([s for s in text.strip().splitlines(True) if s.strip()])
         return text
 
+    def threads(self, thread_name, name):
+        start_time = time.time()
+
+        if thread_name == "inpaint":
+            # InPaint to Generate Background Image
+            if self.obj_seg is None:
+                self.obj_seg = np.zeros(self.img_org.shape[:2],dtype = 'uint8')
+                rc = np.concatenate(( self.leftContour, self.rightContour), axis = 0).reshape((-1,1,2)).astype(np.int32)
+                print("created points in order")
+                cv2.drawContours(self.obj_seg, [rc],0,255,-1)
+                self.obj_seg = cv2.cvtColor(self.obj_seg,cv2.COLOR_GRAY2BGR)
+                print("generated mask")
+
+            inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
+            cv2.imwrite(name + '.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
+
+        if thread_name == "meshlab":
+            # Merge Vertices, Smoothing, Export Textures and Model to OBJ
+            os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
+
+        return (thread_name, time.time() - start_time)
+
     def export(self, name):
         # self.plot3DArray(self.objectPoints)
         def getallPoints(p1, p2):
@@ -361,14 +385,27 @@ class ThreeSweep():
             self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
 
+        start_time = time.time()
         data = self.generatePLY()
         f = open(name + ".ply", "w")
         f.write(data)
         f.close()
 
-        # InPaint to Generate Background Image
-        inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-        cv2.imwrite(name + '.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
-        # Merge Vertices, Smoothing, Export Textures and Model to OBJ
-        os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
+        # Run tasks
+        tasks = []
+        tasks.append( ("inpaint", name,) )
+        tasks.append( ("meshlab", name,) )
+        results = [pool.apply_async( self.threads, t ) for t in tasks]
+
+        # Process results
+        for result in results:
+            (thread_name, thread_time) = result.get()
+            print("Thread t-%s completed in %f" % (thread_name, thread_time) )
+
+        pool.close()
+        pool.join()
+
+        print(time.time() - start_time)
         pass
