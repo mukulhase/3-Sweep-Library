@@ -60,6 +60,8 @@ class ScribbleArea(QOpenGLWidget):
         self.app = None
 
     def revertAll(self):
+        self.imagePainter.end()
+        self.imagePainter = None
         self.edges = None
         self.firstPoint = None
         self.thirdPoint = None
@@ -268,8 +270,6 @@ class ScribbleArea(QOpenGLWidget):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton and self.state['currentStep'] == 'ThirdSweep':
-            self.drawLineTo(event.pos())
         if self.state['currentStep'] == 'Start':
             self.firstPoint = event.pos()
             self.stateUpdate({'currentStep': 'FirstSweep'})
