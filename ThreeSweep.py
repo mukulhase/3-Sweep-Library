@@ -1,8 +1,7 @@
 import copy
+import multiprocessing
 import os
 import time
-import threading
-import multiprocessing
 
 import cv2
 import numpy as np
@@ -113,6 +112,7 @@ class ThreeSweep():
 
     def loadImage(self, image):
         ''' Load image into module for processing '''
+        print(image)
         if isinstance(image, str):
             self.filename = image
             self.image = cv2.imread(image,0)

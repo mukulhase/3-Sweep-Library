@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import os
 import shelve
 import sys
 import time
@@ -169,26 +170,30 @@ class ScribbleArea(QOpenGLWidget):
             self.progressBar.setValue(75)
             self.restoreDrawing()
             self.update()
-            self.threesweep.export('output')
+            self.statusBar.showMessage('Exporting... Please Wait')
+            self.threesweep.export("object" + str(self.state['iteration']))
             self.statusBar.showMessage('Export Completed!')
             self.progressBar.setValue(100)
             ret = QMessageBox.question(self, "Scribble",
                                       "Would you like to add another object?",
                                       QMessageBox.Yes | QMessageBox.No )
             if ret == QMessageBox.Yes:
+                self.imagePath = os.path.join(os.path.dirname(__file__),
+                                              'object' + str(self.state['iteration']) + '.png')
+                self.state['iteration'] += 1
                 return self.revertAll()
             elif ret == QMessageBox.No:
                 return False
 
     def openImage(self, fileName):
         self.threesweep.loadImage(fileName)
-        self.loadedImage = QImage()
-        if not self.loadedImage.load(fileName):
-            return False
         self.imagePath = fileName
         self.loadImageToCanvas()
 
     def loadImageToCanvas(self):
+        self.loadedImage = QImage()
+        if not self.loadedImage.load(self.imagePath):
+            return False
         newSize = self.loadedImage.size()
         self.resize(newSize)
         newSize = self.loadedImage.size().expandedTo(self.size())
