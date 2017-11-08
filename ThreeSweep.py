@@ -361,7 +361,8 @@ class ThreeSweep():
 
         if thread_name == "meshlab":
             # Merge Vertices, Smoothing, Export Textures and Model to OBJ
-            os.system('meshlabserver -i ./output.ply -o ./output.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
+            os.system('meshlabserver -i ./' + name + '.ply -o ./' + name + '.obj -s meshlab_ft.mlx -om vc vf vq vt fc ff fq fn wc wn wt')
+            os.rename('output_color.png', name + '.png')
 
         return (thread_name, time.time() - start_time)
 
