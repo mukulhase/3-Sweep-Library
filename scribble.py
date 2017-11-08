@@ -8,17 +8,22 @@ import time
 
 import cv2
 import numpy as np
+from PyQt5.Qt3DCore import QEntity, QTransform
+from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController)
+from PyQt5.Qt3DInput import QInputAspect
+from PyQt5.Qt3DRender import QPointLight
 from PyQt5.QtCore import QDir
 from PyQt5.QtCore import (QPoint, QRect, QSize, Qt)
 from PyQt5.QtGui import (QColor, QImage, QPainter)
-from PyQt5.QtGui import QImageWriter, QPen, qRgb, qRgba
+from PyQt5.QtGui import QImageWriter, QPen, qRgb, qRgba, QVector3D
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QColorDialog, QFileDialog,
-                             QInputDialog, QMainWindow, QMenu, QMessageBox, QStatusBar, QProgressBar)
+                             QInputDialog, QMainWindow, QMenu, QMessageBox, QStatusBar, QProgressBar, QPushButton,
+                             QWidget, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtWidgets import QApplication, QOpenGLWidget
 
-import Viewer3D
 from ThreeSweep import ThreeSweep, generateEllipse
+from Viewer3D import SceneModifier
 
 last_time = None
 
@@ -472,10 +477,24 @@ class MainWindow(QMainWindow):
         self.saveAsActs = []
 
         self.scribbleArea = ScribbleArea()
-        self.setCentralWidget(self.scribbleArea)
         # layout = QGridLayout(self.centralWidget())
         # layout.addWidget(self.editor, 0, 0, 1, 3)
         # layout.addWidget(button, 1, 1, 1, 1)
+        widget = QWidget()
+        self.hLayout = QHBoxLayout(widget)
+        self.vLayout = QVBoxLayout()
+        self.vLayout.setAlignment(Qt.AlignTop)
+        container = self.create3DWidget()
+        self.hLayout.addWidget(self.scribbleArea, 3)
+        self.hLayout.addWidget(container, 3)
+        self.hLayout.addLayout(self.vLayout)
+
+        widget.setWindowTitle("3D Viewer")
+
+        # Show the window.
+        widget.show()
+        widget.resize(1200, 800)
+        self.setCentralWidget(widget)
         self.createActions()
         self.createMenus()
         self.createToolBar()
@@ -490,6 +509,81 @@ class MainWindow(QMainWindow):
         self.progressBar.setValue(100)
         self.scribbleArea.progressBar = self.progressBar
         self.scribbleArea.statusBar = self.statusBar
+
+    def create3DWidget(self):
+        view = Qt3DWindow()
+        # view.defaultFramegraph().setClearColor(QColor(0x4d4d4f))
+        container = QWidget.createWindowContainer(view)
+        screenSize = view.screen().size()
+        container.setMinimumSize(QSize(200, 100))
+        container.setMaximumSize(screenSize)
+        aspect = QInputAspect()
+        view.registerAspect(aspect)
+        # Root entity.
+        self.rootEntity = QEntity()
+
+        # Camera.
+        cameraEntity = view.camera()
+
+        cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
+        cameraEntity.setPosition(QVector3D(0.0, 24.0, -0.5))
+        cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
+        cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
+
+        # Light
+        lightEntity = QEntity(self.rootEntity)
+        light = QPointLight(lightEntity)
+        light.setColor(QColor.fromRgbF(1.0, 1.0, 1.0, 1.0))
+        light.setIntensity(1)
+        lightEntity.addComponent(light)
+        lightTransform = QTransform(lightEntity)
+        lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))
+        lightEntity.addComponent(lightTransform)
+
+        # For camera controls.
+        camController = QFirstPersonCameraController(self.rootEntity)
+        camController.setCamera(cameraEntity)
+
+        # Set root object of the scene.
+        view.setRootEntity(self.rootEntity)
+
+        modifier = SceneModifier(self.rootEntity)
+
+        moveLeft = QPushButton(text="Left")
+        moveLeft.clicked.connect(modifier.transformLeft)
+        moveLeft.setAutoRepeat(True)
+
+        moveRight = QPushButton(text="Right")
+        moveRight.clicked.connect(modifier.transformRight)
+        moveRight.setAutoRepeat(True)
+
+        moveUp = QPushButton(text="Up")
+        moveUp.clicked.connect(modifier.transformUp)
+        moveUp.setAutoRepeat(True)
+
+        moveDown = QPushButton(text="Down")
+        moveDown.clicked.connect(modifier.transformDown)
+        moveDown.setAutoRepeat(True)
+
+        scaleDown = QPushButton(text="Scale Down")
+        scaleDown.clicked.connect(modifier.scaleDown)
+        scaleDown.setAutoRepeat(True)
+
+        scaleUp = QPushButton(text="Scale Up")
+        scaleUp.clicked.connect(modifier.scaleUp)
+        scaleUp.setAutoRepeat(True)
+
+        loadModel = QPushButton(text="Load Model")
+        loadModel.clicked.connect(modifier.loadscene)
+
+        self.vLayout.addWidget(moveLeft)
+        self.vLayout.addWidget(moveRight)
+        self.vLayout.addWidget(moveUp)
+        self.vLayout.addWidget(moveDown)
+        self.vLayout.addWidget(scaleUp)
+        self.vLayout.addWidget(scaleDown)
+        self.vLayout.addWidget(loadModel)
+        return container
 
     def closeEvent(self, event):
         if self.maybeSave():
@@ -654,5 +748,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    viewer = Viewer3D.Viewer3D(app)
     sys.exit(app.exec_())
