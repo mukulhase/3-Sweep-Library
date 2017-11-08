@@ -73,6 +73,7 @@ class ThreeSweep():
         self.inpaintiterations = 15
         self.obj_seg = None
         self.img_org = None
+        self.OUTPUT_DIR = 'output/'
         pass
 
     def updateState(self, state=None):
@@ -357,7 +358,7 @@ class ThreeSweep():
                 print("generated mask")
 
             inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-            cv2.imwrite(name + '.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
+            cv2.imwrite('output/output.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
 
         if thread_name == "meshlab":
             # Merge Vertices, Smoothing, Export Textures and Model to OBJ
@@ -386,6 +387,7 @@ class ThreeSweep():
             self.colorIndices += getallPoints(self.leftContour[i], self.rightContour[i])
             # self.update3DPoints([self.leftContour[i],self.rightContour[i]])
 
+        name = self.OUTPUT_DIR + name
         start_time = time.time()
         data = self.generatePLY()
         f = open(name + ".ply", "w")

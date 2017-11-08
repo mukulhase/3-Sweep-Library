@@ -3,6 +3,7 @@ grabcuted.png
 output.png
 output.stl
 output.ply
+output/o*
 *.pyc
 .idea/
 qt_3dviewer/app.pro.user

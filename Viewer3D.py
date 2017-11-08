@@ -5,11 +5,12 @@ from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController, QNormalD
                               QNormalDiffuseSpecularMapMaterial,
                               QPlaneMesh)
 from PyQt5.Qt3DInput import QInputAspect
-from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight
+from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight, QObjectPicker
 from PyQt5.QtCore import pyqtSlot, QObject, QSize, Qt, QUrl
 from PyQt5.QtGui import QColor, QVector3D, QImage
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton)
 
+OUTPUT_DIR = 'output/'
 
 class PlaneEntity(QEntity):
 
@@ -57,12 +58,12 @@ class MainObject(QEntity):
 
         self.m_object.addComponent(self.m_objectMaterial)
 
-        self.m_object.mesh().setSource(QUrl.fromLocalFile('output.obj'))
+        self.m_object.mesh().setSource(QUrl.fromLocalFile(OUTPUT_DIR + 'object0.obj'))
 
         self.m_objectMaterial.diffuse().addTextureImage(self.m_objectImage)
         self.m_objectMaterial.normal().addTextureImage(self.m_objectNormalImage)
 
-        self.m_objectImage.setSource( QUrl.fromLocalFile('output_color.png') )
+        self.m_objectImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'object0.png') )
         self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/normal.png') )
     
         self.m_objectMaterial.setShininess(80.0)
@@ -108,10 +109,10 @@ class SceneModifier(QObject):
     @pyqtSlot()
     def loadscene(self):
         diffuseImage = QTextureImage()
-        diffuseImage.setSource( QUrl.fromLocalFile('output.png') )
+        diffuseImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'output.png') )
         self.normalDiffuseSpecularMapMaterial.diffuse().addTextureImage(diffuseImage)
         background = QImage()
-        background.load('output.png')
+        background.load(OUTPUT_DIR + 'output.png')
 
         # Background Plane
         self.planeEntity.mesh().setWidth(20.0 * background.width() / background.height())
@@ -120,6 +121,14 @@ class SceneModifier(QObject):
         self.obj = MainObject(self.m_rootEntity)
         self.obj.setPosition(QVector3D( - (self.planeEntity.mesh().width() / 2) * 0.0, 0.0, - (self.planeEntity.mesh().height() / 2) * 0.0))
         self.obj.setScale(0.05)
+        # picker = QObjectPicker(self.m_rootEntity)
+        # picker.setHoverEnabled(True)
+        # self.obj.addComponent(picker)
+        # picker.pressed.connect(self.handlePickerPress)
+
+    @pyqtSlot()
+    def handlePickerPress(self):
+        print("selected obj")
 
     @pyqtSlot()
     def transformLeft(self):
@@ -188,8 +197,8 @@ class Viewer3D():
         lightEntity.addComponent(lightTransform)
 
         # For camera controls.
-        camController = QFirstPersonCameraController(self.rootEntity)
-        camController.setCamera(cameraEntity)
+        # camController = QFirstPersonCameraController(self.rootEntity)
+        # camController.setCamera(cameraEntity)
 
         # Set root object of the scene.
         view.setRootEntity(self.rootEntity)
