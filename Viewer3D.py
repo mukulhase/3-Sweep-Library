@@ -121,10 +121,10 @@ class SceneModifier(QObject):
         self.obj = MainObject(self.m_rootEntity)
         self.obj.setPosition(QVector3D( - (self.planeEntity.mesh().width() / 2) * 0.0, 0.0, - (self.planeEntity.mesh().height() / 2) * 0.0))
         self.obj.setScale(0.05)
-        # picker = QObjectPicker(self.m_rootEntity)
-        # picker.setHoverEnabled(True)
-        # self.obj.addComponent(picker)
-        # picker.pressed.connect(self.handlePickerPress)
+        picker = QObjectPicker(self.m_rootEntity)
+        picker.setHoverEnabled(True)
+        self.obj.addComponent(picker)
+        picker.clicked.connect(self.handlePickerPress)
 
     @pyqtSlot()
     def handlePickerPress(self):
@@ -197,8 +197,8 @@ class Viewer3D():
         lightEntity.addComponent(lightTransform)
 
         # For camera controls.
-        # camController = QFirstPersonCameraController(self.rootEntity)
-        # camController.setCamera(cameraEntity)
+        camController = QFirstPersonCameraController(self.rootEntity)
+        camController.setCamera(cameraEntity)
 
         # Set root object of the scene.
         view.setRootEntity(self.rootEntity)
