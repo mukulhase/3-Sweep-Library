@@ -455,12 +455,12 @@ class ScribbleArea(QOpenGLWidget):
 
     @pyqtSlot(str)
     def setModelDensity(self, text):
-        print(int(text))
+        self.threesweep.primitiveDensity = int(text)
         pass
 
     @pyqtSlot(str)
     def setModelResolution(self, text):
-        print(int(text))
+        self.threesweep.axisResolution = int(text)
         pass
 
     # Covert numpy array to QImage // error in line 4
@@ -773,7 +773,6 @@ class MainWindow(QMainWindow):
             return self.scribbleArea.saveImage(fileName, fileFormat)
 
         return False
-
 
 if __name__ == '__main__':
 
