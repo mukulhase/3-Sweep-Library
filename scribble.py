@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import os
 import shelve
 import sys
@@ -12,15 +11,13 @@ from PyQt5.Qt3DCore import QEntity, QTransform
 from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController)
 from PyQt5.Qt3DInput import QInputAspect
 from PyQt5.Qt3DRender import QPointLight
-from PyQt5.QtCore import QDir
-from PyQt5.QtCore import (QPoint, QRect, QSize, Qt)
+from PyQt5.QtCore import (QPoint, QRect, QSize, Qt, QDir, pyqtSlot)
 from PyQt5.QtGui import (QColor, QImage, QPainter)
 from PyQt5.QtGui import QImageWriter, QPen, qRgb, qRgba, QVector3D
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
-from PyQt5.QtWidgets import (QAction, QColorDialog, QFileDialog,
+from PyQt5.QtWidgets import (QAction, QColorDialog, QFileDialog, QLineEdit,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QStatusBar, QProgressBar, QPushButton,
-                             QWidget, QHBoxLayout, QVBoxLayout)
-from PyQt5.QtWidgets import QApplication, QOpenGLWidget
+                             QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QApplication, QOpenGLWidget)
 
 from ThreeSweep import ThreeSweep, generateEllipse
 from Viewer3D import SceneModifier
@@ -451,6 +448,21 @@ class ScribbleArea(QOpenGLWidget):
     def startGrabCut(self):
         self.stateUpdate({'currentStep': 'StartGrabcut'})
 
+    @pyqtSlot(int)
+    def setAxisRotate(self, enabled):
+        print(enabled)
+        pass
+
+    @pyqtSlot(str)
+    def setModelDensity(self, text):
+        print(int(text))
+        pass
+
+    @pyqtSlot(str)
+    def setModelResolution(self, text):
+        print(int(text))
+        pass
+
     # Covert numpy array to QImage // error in line 4
     def toQImage(self, im, copy=False):
         gray_color_table = [qRgb(i, i, i) for i in range(256)]
@@ -676,6 +688,19 @@ class MainWindow(QMainWindow):
         self.drawRectAct = QAction("&Grab Cut", self,
                                    triggered=self.scribbleArea.startGrabCut)
 
+        self.axisRotateAct = QCheckBox(checked=True, text="Axis Rotate")
+        self.axisRotateAct.stateChanged.connect(self.scribbleArea.setAxisRotate)
+
+        self.input_axisResolution = QLineEdit()
+        self.input_axisResolution.setText("20")
+        self.input_axisResolution.setMaximumWidth(40);
+        self.input_axisResolution.textChanged.connect(self.scribbleArea.setModelResolution)
+
+        self.input_primitiveDensity = QLineEdit()
+        self.input_primitiveDensity.setText("200")
+        self.input_primitiveDensity.setMaximumWidth(40);
+        self.input_primitiveDensity.textChanged.connect(self.scribbleArea.setModelDensity)
+
 
         self.clearScreenAct = QAction("&Clear Screen", self, shortcut="Ctrl+L",
                                       triggered=self.scribbleArea.clearImage)
@@ -717,6 +742,13 @@ class MainWindow(QMainWindow):
         tb = self.addToolBar('Image Processing')
         tb.addAction(self.drawRectAct)
         tb.addAction(self.startSweepAct)
+        tb.addSeparator()
+        tb.addSeparator()
+        tb.addWidget(self.axisRotateAct)
+        tb.addSeparator()
+        tb.addSeparator()
+        tb.addWidget(self.input_axisResolution)
+        tb.addWidget(self.input_primitiveDensity)
 
     def maybeSave(self):
         if self.scribbleArea.isModified():
