@@ -181,7 +181,7 @@ class ScribbleArea(QOpenGLWidget):
                                       QMessageBox.Yes | QMessageBox.No )
             if ret == QMessageBox.Yes:
                 self.imagePath = os.path.join(os.path.dirname(__file__),
-                                              '/output/uploaded.png')
+                                              'output/uploaded.png')
                 self.state['iteration'] += 1
                 return self.revertAll()
             elif ret == QMessageBox.No:

@@ -4,6 +4,7 @@ output.png
 output.stl
 output.ply
 output/o*
+output/u*
 *.pyc
 .idea/
 qt_3dviewer/app.pro.user

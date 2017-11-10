@@ -113,6 +113,7 @@ class ThreeSweep():
             locals()[self.state]()
 
     def loadImage(self, image):
+        import time
         ''' Load image into module for processing '''
         print(image)
         if isinstance(image, str):
