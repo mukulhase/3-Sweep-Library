@@ -179,6 +179,10 @@ class ScribbleArea(QOpenGLWidget):
             ret = QMessageBox.question(self, "Scribble",
                                       "Would you like to add another object?",
                                       QMessageBox.Yes | QMessageBox.No )
+
+            # window = MainWindow()
+            # window.modifier.loadscene(self.state['iteration'] + 1)
+
             if ret == QMessageBox.Yes:
                 self.imagePath = os.path.join(os.path.dirname(__file__),
                                               'output/uploaded.png')
@@ -559,34 +563,34 @@ class MainWindow(QMainWindow):
         # Set root object of the scene.
         view.setRootEntity(self.rootEntity)
 
-        modifier = SceneModifier(self.rootEntity)
+        self.modifier = SceneModifier(self.rootEntity)
 
         moveLeft = QPushButton(text="Left")
-        moveLeft.clicked.connect(modifier.transformLeft)
+        moveLeft.clicked.connect(self.modifier.transformLeft)
         moveLeft.setAutoRepeat(True)
 
         moveRight = QPushButton(text="Right")
-        moveRight.clicked.connect(modifier.transformRight)
+        moveRight.clicked.connect(self.modifier.transformRight)
         moveRight.setAutoRepeat(True)
 
         moveUp = QPushButton(text="Up")
-        moveUp.clicked.connect(modifier.transformUp)
+        moveUp.clicked.connect(self.modifier.transformUp)
         moveUp.setAutoRepeat(True)
 
         moveDown = QPushButton(text="Down")
-        moveDown.clicked.connect(modifier.transformDown)
+        moveDown.clicked.connect(self.modifier.transformDown)
         moveDown.setAutoRepeat(True)
 
         scaleDown = QPushButton(text="Scale Down")
-        scaleDown.clicked.connect(modifier.scaleDown)
+        scaleDown.clicked.connect(self.modifier.scaleDown)
         scaleDown.setAutoRepeat(True)
 
         scaleUp = QPushButton(text="Scale Up")
-        scaleUp.clicked.connect(modifier.scaleUp)
+        scaleUp.clicked.connect(self.modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
-        loadModel = QPushButton(text="Load Model")
-        loadModel.clicked.connect(modifier.loadscene)
+        # loadModel = QPushButton(text="Load Model")
+        # loadModel.clicked.connect(self.modifier.loadscene)
 
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
@@ -594,7 +598,7 @@ class MainWindow(QMainWindow):
         self.vLayout.addWidget(moveDown)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
-        self.vLayout.addWidget(loadModel)
+        # self.vLayout.addWidget(loadModel)
         return container
 
     def closeEvent(self, event):

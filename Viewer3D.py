@@ -58,16 +58,17 @@ class MainObject(QEntity):
 
         self.m_object.addComponent(self.m_objectMaterial)
 
-        self.m_object.mesh().setSource(QUrl.fromLocalFile(OUTPUT_DIR + 'object0.obj'))
-
         self.m_objectMaterial.diffuse().addTextureImage(self.m_objectImage)
         self.m_objectMaterial.normal().addTextureImage(self.m_objectNormalImage)
-
-        self.m_objectImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'object0.png') )
-        self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/normal.png') )
     
         self.m_objectMaterial.setShininess(80.0)
         self.m_objectMaterial.setSpecular(QColor.fromRgbF(1.0, 1.0, 1.75, 1.0))
+
+    def loadObject(self, index):
+        self.m_object.mesh().setSource(QUrl.fromLocalFile(OUTPUT_DIR + 'object' + str(index) + '.obj'))
+
+        self.m_objectImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'object' + str(index) + '.png') )
+        self.m_objectNormalImage.setSource( QUrl.fromLocalFile('qt_3dviewer/exampleresources/normal.png') )
 
     def setPosition(self, pos):
         self.m_object.transform().setTranslation(pos)
@@ -107,7 +108,7 @@ class SceneModifier(QObject):
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
     @pyqtSlot()
-    def loadscene(self):
+    def loadscene(self, count):
         diffuseImage = QTextureImage()
         diffuseImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'output.png') )
         self.normalDiffuseSpecularMapMaterial.diffuse().addTextureImage(diffuseImage)
@@ -118,13 +119,16 @@ class SceneModifier(QObject):
         self.planeEntity.mesh().setWidth(20.0 * background.width() / background.height())
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
-        self.obj = MainObject(self.m_rootEntity)
-        self.obj.setPosition(QVector3D( - (self.planeEntity.mesh().width() / 2) * 0.0, 0.0, - (self.planeEntity.mesh().height() / 2) * 0.0))
-        self.obj.setScale(0.05)
-        picker = QObjectPicker(self.m_rootEntity)
-        picker.setHoverEnabled(True)
-        self.obj.addComponent(picker)
-        picker.clicked.connect(self.handlePickerPress)
+        for i in range(0, count):
+            self.obj = MainObject(self.m_rootEntity)
+            self.obj.loadObject(i)
+            self.obj.setPosition(QVector3D( - (self.planeEntity.mesh().width() / 2) * 0.0, 0.0, - (self.planeEntity.mesh().height() / 2) * 0.0))
+            self.obj.setScale(0.05)
+            print(i)
+        # picker = QObjectPicker(self.m_rootEntity)
+        # picker.setHoverEnabled(True)
+        # self.obj.addComponent(picker)
+        # picker.clicked.connect(self.handlePickerPress)
 
     @pyqtSlot()
     def handlePickerPress(self):
