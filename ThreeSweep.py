@@ -73,6 +73,7 @@ class ThreeSweep():
         self.inpaintiterations = 15
         self.obj_seg = None
         self.img_org = None
+        self.img_inpaint = None
         self.OUTPUT_DIR = 'output/'
         pass
 
@@ -357,8 +358,9 @@ class ThreeSweep():
                 self.obj_seg = cv2.cvtColor(self.obj_seg,cv2.COLOR_GRAY2BGR)
                 print("generated mask")
 
-            inpaint_mask = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA)
-            cv2.imwrite('output/output.png', cv2.flip(inpaint_mask.astype('uint8'), 1))
+            self.img_inpaint = cv2.inpaint(self.image, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA).astype('uint8')
+            cv2.imwrite('output/uploaded.png', self.img_inpaint)
+            cv2.imwrite('output/output.png', cv2.flip(self.img_inpaint, 1))
 
         if thread_name == "meshlab":
             # Merge Vertices, Smoothing, Export Textures and Model to OBJ
