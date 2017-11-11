@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     MainWindow mainWin;
 
     Qt3DExtras::Qt3DWindow *view = new Qt3DExtras::Qt3DWindow();
-     view->defaultFrameGraph()->setClearColor(QColor(200,207,200,255));
+    view->defaultFrameGraph()->setClearColor(QColor(200,207,200,255));
     QWidget *sceneContainer = QWidget::createWindowContainer(view);
     QSize screenSize = view->screen()->size();
     sceneContainer->setMinimumSize(QSize(200, 100));
@@ -33,8 +33,9 @@ int main(int argc, char **argv)
     // Camera
     mainWin.cameraEntity = view->camera();
 
+//    cameraEntity->setProjectionType(Qt3DRender::QCameraLens::PerspectiveProjection);
     mainWin.cameraEntity->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
-    mainWin.cameraEntity->setPosition(QVector3D(0.0f, 124.0f, -0.5f));
+    mainWin.cameraEntity->setPosition(QVector3D(0.0f, 24.0f, -0.5f));
     mainWin.cameraEntity->setUpVector(QVector3D(0, 1, 0));
     mainWin.cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 

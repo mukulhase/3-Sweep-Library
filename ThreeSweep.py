@@ -362,8 +362,8 @@ class ThreeSweep():
 
             self.img_org = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA).astype('uint8')
             cv2.imwrite('output/uploaded.png', self.img_org)
-            cv2.imwrite('output/output.png', self.img_org)
-            # cv2.imwrite('output/output.png', cv2.flip(self.img_org, 1))
+            # cv2.imwrite('output/output.png', self.img_org)
+            cv2.imwrite('output/output.png', cv2.flip(self.img_org, 1))
 
         if thread_name == "meshlab":
             # Merge Vertices, Smoothing, Export Textures and Model to OBJ

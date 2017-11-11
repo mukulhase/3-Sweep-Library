@@ -542,8 +542,8 @@ class MainWindow(QMainWindow):
         cameraEntity = view.camera()
 
         cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-        cameraEntity.setPosition(QVector3D(0.0, 50.0, -0.5))
-        cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
+        cameraEntity.setPosition(QVector3D(0.0, -30.0, -0.5))
+        cameraEntity.setUpVector(QVector3D(0.0, -1.0, 0.0))
         cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 
         # Light
@@ -553,7 +553,7 @@ class MainWindow(QMainWindow):
         light.setIntensity(1)
         lightEntity.addComponent(light)
         lightTransform = QTransform(lightEntity)
-        lightTransform.setTranslation(QVector3D(10.0, 40.0, 0.0))
+        lightTransform.setTranslation(QVector3D(10.0, -40.0, 0.0))
         lightEntity.addComponent(lightTransform)
 
         # For camera controls.
@@ -581,6 +581,18 @@ class MainWindow(QMainWindow):
         moveDown.clicked.connect(self.modifier.transformDown)
         moveDown.setAutoRepeat(True)
 
+        moveX = QPushButton(text="RotateX")
+        moveX.clicked.connect(self.modifier.rotateX)
+        moveX.setAutoRepeat(True)
+
+        moveY = QPushButton(text="RotateY")
+        moveY.clicked.connect(self.modifier.rotateY)
+        moveY.setAutoRepeat(True)
+
+        moveZ = QPushButton(text="RotateZ")
+        moveZ.clicked.connect(self.modifier.rotateZ)
+        moveZ.setAutoRepeat(True)
+
         scaleDown = QPushButton(text="Scale Down")
         scaleDown.clicked.connect(self.modifier.scaleDown)
         scaleDown.setAutoRepeat(True)
@@ -589,15 +601,22 @@ class MainWindow(QMainWindow):
         scaleUp.clicked.connect(self.modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
-        loadModel = QPushButton(text="Switch Model")
-        loadModel.clicked.connect(self.modifier.handlePickerPress)
+        switchModel = QPushButton(text="Switch Model")
+        switchModel.clicked.connect(self.modifier.handlePickerPress)
+
+        loadModel = QPushButton(text="Load Model")
+        loadModel.clicked.connect(self.modifier.loadscene)
 
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
         self.vLayout.addWidget(moveUp)
         self.vLayout.addWidget(moveDown)
+        self.vLayout.addWidget(moveX)
+        self.vLayout.addWidget(moveY)
+        self.vLayout.addWidget(moveZ)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
+        self.vLayout.addWidget(switchModel)
         self.vLayout.addWidget(loadModel)
         self.scribbleArea.modifier = self.modifier
         return container

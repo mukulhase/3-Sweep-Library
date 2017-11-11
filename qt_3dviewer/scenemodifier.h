@@ -21,8 +21,6 @@
 #include <Qt3DExtras/QForwardRenderer>
 #include <Qt3DRender/QTextureImage>
 #include <Qt3DExtras/QDiffuseMapMaterial>
-#include <Qt3DExtras/QNormalDiffuseMapAlphaMaterial>
-#include <Qt3DExtras/QNormalDiffuseMapMaterial>
 #include <QNormalDiffuseSpecularMapMaterial>
 
 #include <Qt3DInput/QKeyboardHandler>
@@ -42,10 +40,8 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QPushButton>
-#include <QTextureImage>
 
 #include "planeentity.h"
-#include "renderableentity.h"
 
 class SceneModifier : public QObject
 {
@@ -97,12 +93,6 @@ private:
     QList<Qt3DCore::QEntity *> scene_entities;
     QList<Qt3DCore::QTransform *> scene_entities_trans;
 
-    RenderableEntity *m_pot;
-
-    Qt3DExtras::QNormalDiffuseMapMaterial *m_potMaterial;
-
-    Qt3DRender::QTextureImage *m_potImage;
-    Qt3DRender::QTextureImage *m_potNormalImage;
 };
 
 #endif // SCENEMODIFIER_H

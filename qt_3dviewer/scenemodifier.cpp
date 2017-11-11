@@ -18,7 +18,7 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     cuboid->setXZMeshResolution(QSize(2, 2));
     // CuboidMesh Transform
     objTransform = new Qt3DCore::QTransform();
-    objTransform->setScale(0.2f);
+    objTransform->setScale(0.05f);
     objTransform->setTranslation(QVector3D(0.0f, 5.0f, 0.0f));
 
     objMaterial = new Qt3DExtras::QPhongMaterial();
@@ -46,8 +46,17 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     objectMaterial->setAmbient(QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f));
 
     this->initData();
-
     qGuiApp->installEventFilter(this);
+    this->loadImage("/home/vikas/Documents/3-Sweep-Library/output/object0.png");
+    QFile file("/home/vikas/Documents/3-Sweep-Library/output/object0.ply");
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        return;
+    }
+
+    QTextStream in(&file);
+    this->parsePLY(in);
+
+    file.close();
 }
 
 SceneModifier::~SceneModifier()
@@ -62,8 +71,8 @@ void SceneModifier::initData()
 
 void SceneModifier::loadImage(const QString &fileName)
 {
-    if(m_objEntity->isEnabled())
-        m_objEntity->setEnabled(false);
+//    if(m_objEntity->isEnabled())
+//        m_objEntity->setEnabled(false);
     QStringList filepath = fileName.split('.');
     qInfo() << filepath[0];
 
@@ -73,6 +82,10 @@ void SceneModifier::loadImage(const QString &fileName)
 //    mesh->setSource(QUrl::fromLocalFile(filmesh.absoluteFilePath()));
 //    m_objEntity->addComponent(mesh);
 
+//    Qt3DRender::QTextureImage *Texture = new Qt3DRender::QTextureImage();
+//    Texture->setSource(QUrl::fromLocalFile("/home/vikas/Documents/3-Sweep-Library/output_color.png"));
+//    objectMaterial->diffuse()->addTextureImage(Texture);
+//    m_objEntity->addComponent(objectMaterial);
 
     QFileInfo fil(filepath[0] + ".png");
     QImage *background = new QImage(fil.absoluteFilePath());
@@ -105,7 +118,7 @@ void SceneModifier::parsePLY(QTextStream &input)
             {
                 QVector3D v(data[0].toFloat(), data[1].toFloat(), data[2].toFloat());
                 vertices->append(v);
-                QVector3D c(data[3].toFloat() / 255.0f, data[4].toFloat()/255.0f, data[5].toFloat()/255.0f);
+                QVector3D c(data[3].toFloat()/255.0f, data[4].toFloat()/255.0f, data[5].toFloat()/255.0f);
                 colors->append(c);
             }
 
@@ -117,7 +130,7 @@ void SceneModifier::parsePLY(QTextStream &input)
                                          ,vertices->at(data[3].toInt()), colors->at(data[3].toInt()));
                 }
     }
-    qInfo() << "Done Loading Model";
+    qInfo() << "Done";
 }
 
 void SceneModifier::createTriangles(QVector3D v0, QVector3D color1,

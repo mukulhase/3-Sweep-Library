@@ -83,6 +83,14 @@ class MainObject(QEntity):
     def scale(self):
         return self.m_object.transform().scale()
 
+    def setRotationX(self):
+        self.m_object.transform().setRotationX(self.m_object.transform().rotationX() + 2)
+
+    def setRotationY(self):
+        self.m_object.transform().setRotationY(self.m_object.transform().rotationY() + 2)
+
+    def setRotationZ(self):
+        self.m_object.transform().setRotationZ(self.m_object.transform().rotationZ() + 2)
 
 class SceneModifier(QObject):
 
@@ -108,6 +116,7 @@ class SceneModifier(QObject):
         self.planeEntity.mesh().setHeight(20.0)
         self.planeEntity.mesh().setWidth(20.0 * background.width() / background.height())
         self.planeEntity.mesh().setMeshResolution(QSize(5, 5))
+        self.planeEntity.m_transform.setRotationZ(180.0)
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
     @pyqtSlot()
@@ -128,7 +137,7 @@ class SceneModifier(QObject):
         self.obj.setScale(self.planeEntity.mesh().height() / background.height())
 
         coord = [(self.planeEntity.mesh().width() / background.width()) * coord[0], (self.planeEntity.mesh().height() / background.height()) * coord[1]]
-        self.obj.setPosition(QVector3D(float(coord[0]), 0.0, - float(coord[1])))
+        self.obj.setPosition(QVector3D(float(coord[0]), -1.0, - float(coord[1])))
 
         self.listOfObjects.append(self.obj)
         # picker = QObjectPicker(self.m_rootEntity)
@@ -164,6 +173,18 @@ class SceneModifier(QObject):
     def scaleDown(self):
         self.obj.setScale(self.obj.scale() - 0.005)
 
+    @pyqtSlot()
+    def rotateX(self):
+        self.obj.setRotationX()
+
+    @pyqtSlot()
+    def rotateY(self):
+        self.obj.setRotationY()
+
+    @pyqtSlot()
+    def rotateZ(self):
+        self.obj.setRotationZ()
+
 class Viewer3D():
     def __init__(self, app):
         view = Qt3DWindow()
@@ -192,7 +213,7 @@ class Viewer3D():
         cameraEntity = view.camera()
 
         cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-        cameraEntity.setPosition(QVector3D(0.0, 50.0, -0.5))
+        cameraEntity.setPosition(QVector3D(0.0, -50.0, -0.5))
         cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
         cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 
@@ -239,8 +260,11 @@ class Viewer3D():
         scaleUp.clicked.connect(modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
-        loadModel = QPushButton(text="Switch Model")
-        loadModel.clicked.connect(self.modifier.handlePickerPress)
+        switchModel = QPushButton(text="Switch Model")
+        switchModel.clicked.connect(self.modifier.handlePickerPress)
+
+        loadModel = QPushButton(text="Load Model")
+        loadModel.clicked.connect(self.modifier.loadscene)
 
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
@@ -248,6 +272,7 @@ class Viewer3D():
         self.vLayout.addWidget(moveDown)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
+        self.vLayout.addWidget(switchModel)
         self.vLayout.addWidget(loadModel)
 
         # Show the window.
