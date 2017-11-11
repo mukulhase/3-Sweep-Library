@@ -2,7 +2,7 @@ import sys
 
 from PyQt5.Qt3DCore import QEntity, QTransform
 from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController, QNormalDiffuseMapMaterial,
-                              QNormalDiffuseSpecularMapMaterial,
+                              QNormalDiffuseSpecularMapMaterial, QDiffuseMapMaterial, QPerVertexColorMaterial,
                               QPlaneMesh)
 from PyQt5.Qt3DInput import QInputAspect
 from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight, QObjectPicker
@@ -62,7 +62,8 @@ class MainObject(QEntity):
         self.m_objectMaterial.normal().addTextureImage(self.m_objectNormalImage)
     
         self.m_objectMaterial.setShininess(80.0)
-        self.m_objectMaterial.setSpecular(QColor.fromRgbF(1.0, 1.0, 1.75, 1.0))
+        # self.m_objectMaterial.setTextureScale(1.0)
+        # self.m_objectMaterial.setAmbient(QColor.fromRgbF(1.0, 1.0, 1.0, 1.0))
 
     def loadObject(self, index):
         self.m_object.mesh().setSource(QUrl.fromLocalFile(OUTPUT_DIR + 'object' + str(index) + '.obj'))

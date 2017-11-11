@@ -7,7 +7,7 @@
  <filter name="Remove Duplicated Vertex"/>
  <filter name="HC Laplacian Smooth"/>
  <filter name="Laplacian Smooth">
-  <Param type="RichInt" value="3" name="stepSmoothNum"/>
+  <Param type="RichInt" value="9" name="stepSmoothNum"/>
   <Param type="RichBool" value="true" name="Boundary"/>
   <Param type="RichBool" value="true" name="cotangentWeight"/>
   <Param type="RichBool" value="false" name="Selected"/>
