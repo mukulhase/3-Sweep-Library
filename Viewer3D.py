@@ -5,7 +5,7 @@ from PyQt5.Qt3DExtras import (Qt3DWindow, QFirstPersonCameraController, QNormalD
                               QNormalDiffuseSpecularMapMaterial,
                               QPlaneMesh)
 from PyQt5.Qt3DInput import QInputAspect
-from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight, QObjectPicker
+from PyQt5.Qt3DRender import QMesh, QTextureImage, QPointLight
 from PyQt5.QtCore import pyqtSlot, QObject, QSize, Qt, QUrl
 from PyQt5.QtGui import QColor, QVector3D, QImage
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton)
@@ -108,7 +108,7 @@ class SceneModifier(QObject):
         self.planeEntity.addComponent(self.normalDiffuseSpecularMapMaterial)
 
     @pyqtSlot()
-    def loadscene(self, count):
+    def loadscene(self, count=1):
         diffuseImage = QTextureImage()
         diffuseImage.setSource( QUrl.fromLocalFile(OUTPUT_DIR + 'output.png') )
         self.normalDiffuseSpecularMapMaterial.diffuse().addTextureImage(diffuseImage)

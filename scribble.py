@@ -180,8 +180,7 @@ class ScribbleArea(QOpenGLWidget):
                                       "Would you like to add another object?",
                                       QMessageBox.Yes | QMessageBox.No )
 
-            # window = MainWindow()
-            # window.modifier.loadscene(self.state['iteration'] + 1)
+            self.modifier.loadscene(self.state['iteration'] + 1)
 
             if ret == QMessageBox.Yes:
                 self.imagePath = os.path.join(os.path.dirname(__file__),
@@ -271,7 +270,6 @@ class ScribbleArea(QOpenGLWidget):
             minor = np.linalg.norm(center - getPoint(event.pos()))
             angle = np.arctan2((first[1] - second[1]),(first[0] - second[0]))
             a = generateEllipse(distance/2, minor, angle, 40 ,center)
-            # self.imagePainter.drawEllipse(center, distance / 2, minor)
             for i in a.T:
                 self.plotPoint(i, False)
 
@@ -459,13 +457,15 @@ class ScribbleArea(QOpenGLWidget):
 
     @pyqtSlot(str)
     def setModelDensity(self, text):
-        self.threesweep.primitiveDensity = int(text)
+        if text:
+            self.threesweep.primitiveDensity = int(text)
         pass
 
     @pyqtSlot(str)
     def setModelResolution(self, text):
-        self.threesweep.axisResolution = int(text)
-        pass
+        if text:
+            self.threesweep.axisResolution = int(text)
+            pass
 
     # Covert numpy array to QImage // error in line 4
     def toQImage(self, im, copy=False):
@@ -589,8 +589,8 @@ class MainWindow(QMainWindow):
         scaleUp.clicked.connect(self.modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
-        # loadModel = QPushButton(text="Load Model")
-        # loadModel.clicked.connect(self.modifier.loadscene)
+        loadModel = QPushButton(text="Load Model")
+        loadModel.clicked.connect(self.modifier.loadscene)
 
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
@@ -598,7 +598,8 @@ class MainWindow(QMainWindow):
         self.vLayout.addWidget(moveDown)
         self.vLayout.addWidget(scaleUp)
         self.vLayout.addWidget(scaleDown)
-        # self.vLayout.addWidget(loadModel)
+        self.vLayout.addWidget(loadModel)
+        self.scribbleArea.modifier = self.modifier
         return container
 
     def closeEvent(self, event):
