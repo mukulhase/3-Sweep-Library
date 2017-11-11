@@ -17,7 +17,7 @@ from PyQt5.QtGui import QImageWriter, QPen, qRgb, qRgba, QVector3D
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QAction, QColorDialog, QFileDialog, QLineEdit,
                              QInputDialog, QMainWindow, QMenu, QMessageBox, QStatusBar, QProgressBar, QPushButton,
-                             QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QApplication, QOpenGLWidget)
+                             QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QApplication, QOpenGLWidget, QLabel)
 
 from ThreeSweep import ThreeSweep, generateEllipse
 from Viewer3D import SceneModifier
@@ -452,7 +452,7 @@ class ScribbleArea(QOpenGLWidget):
 
     @pyqtSlot(int)
     def setAxisRotate(self, enabled):
-        print(enabled)
+        self.threesweep.straightAxis = not enabled
         pass
 
     @pyqtSlot(str)
@@ -695,15 +695,15 @@ class MainWindow(QMainWindow):
 
         self.axisRotateAct = QCheckBox(checked=True, text="Axis Rotate")
         self.axisRotateAct.stateChanged.connect(self.scribbleArea.setAxisRotate)
-
+        label = QLabel("Line:")
         self.input_axisResolution = QLineEdit()
         self.input_axisResolution.setText("20")
-        self.input_axisResolution.setMaximumWidth(40);
+        self.input_axisResolution.setMaximumWidth(80)
         self.input_axisResolution.textChanged.connect(self.scribbleArea.setModelResolution)
 
         self.input_primitiveDensity = QLineEdit()
         self.input_primitiveDensity.setText("200")
-        self.input_primitiveDensity.setMaximumWidth(40);
+        self.input_primitiveDensity.setMaximumWidth(80)
         self.input_primitiveDensity.textChanged.connect(self.scribbleArea.setModelDensity)
 
 
@@ -752,7 +752,10 @@ class MainWindow(QMainWindow):
         tb.addWidget(self.axisRotateAct)
         tb.addSeparator()
         tb.addSeparator()
+        tb.addWidget(QLabel("Axis Resolution: "))
         tb.addWidget(self.input_axisResolution)
+        tb.addSeparator()
+        tb.addWidget(QLabel("Primitive Density: "))
         tb.addWidget(self.input_primitiveDensity)
 
     def maybeSave(self):
