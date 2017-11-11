@@ -2,6 +2,7 @@ import copy
 import multiprocessing
 import os
 import time
+import operator
 
 import cv2
 import numpy as np
@@ -59,6 +60,7 @@ class ThreeSweep():
         self.objectPoints = np.array([])
         self.colorIndices = []
         self.sweepPoints = None
+        self.objectLocation = []
         self.primitivePoints = None
         self.axisResolution = 20
         self.primitiveDensity = 200
@@ -231,7 +233,6 @@ class ThreeSweep():
 
         def detectBoundaryPoints(axisPoint, shifted, l, r, anglediff):
             ''' Detect points on the boundary '''
-
             # offset by axis offset
             left = l + shifted
             right = r + shifted
@@ -297,6 +298,7 @@ class ThreeSweep():
         self.sweepPoints[self.iter] = point.T
         self.leftContour[self.iter] = newPoints[0]
         self.rightContour[self.iter] = newPoints[1]
+        self.objectLocation.append([int(self.sweepPoints[self.iter][0]), int(self.sweepPoints[self.iter][1])])
         self.iter += 1
         # self.colorIndices.append(getallPoints(newPoints[0], newPoints[1]))
         self.update3DPoints(newPoints)
@@ -360,7 +362,8 @@ class ThreeSweep():
 
             self.img_org = cv2.inpaint(self.img_org, self.obj_seg,self.inpaintiterations,cv2.INPAINT_TELEA).astype('uint8')
             cv2.imwrite('output/uploaded.png', self.img_org)
-            cv2.imwrite('output/output.png', cv2.flip(self.img_org, 1))
+            cv2.imwrite('output/output.png', self.img_org)
+            # cv2.imwrite('output/output.png', cv2.flip(self.img_org, 1))
 
         if thread_name == "meshlab":
             # Merge Vertices, Smoothing, Export Textures and Model to OBJ
@@ -411,6 +414,10 @@ class ThreeSweep():
 
         pool.close()
         pool.join()
-
         print(time.time() - start_time)
-        pass
+
+        # coord = [sum(x) for x in zip(*self.objectLocation)]
+        coord = self.objectLocation[0]
+        height, width, channels = self.img_org.shape
+        return [(coord[0]) - (width / 2), (coord[1]) - (height / 2)]
+        # return [(coord[0] / len(self.objectLocation)) - (width / 2), (coord[1] / len(self.objectLocation)) - (height / 2)]
