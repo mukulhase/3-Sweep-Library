@@ -173,14 +173,14 @@ class ScribbleArea(QOpenGLWidget):
             self.restoreDrawing()
             self.update()
             self.statusBar.showMessage('Exporting... Please Wait')
-            self.threesweep.export("object" + str(self.state['iteration']))
+            coord = self.threesweep.export("object" + str(self.state['iteration']))
             self.statusBar.showMessage('Export Completed!')
             self.progressBar.setValue(100)
             ret = QMessageBox.question(self, "Scribble",
                                       "Would you like to add another object?",
                                       QMessageBox.Yes | QMessageBox.No )
 
-            self.modifier.loadscene(self.state['iteration'] + 1)
+            self.modifier.loadscene(self.state['iteration'], coord)
 
             if ret == QMessageBox.Yes:
                 self.imagePath = os.path.join(os.path.dirname(__file__),
@@ -542,7 +542,7 @@ class MainWindow(QMainWindow):
         cameraEntity = view.camera()
 
         cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-        cameraEntity.setPosition(QVector3D(0.0, 24.0, -0.5))
+        cameraEntity.setPosition(QVector3D(0.0, 50.0, -0.5))
         cameraEntity.setUpVector(QVector3D(0.0, 1.0, 0.0))
         cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 
@@ -589,8 +589,8 @@ class MainWindow(QMainWindow):
         scaleUp.clicked.connect(self.modifier.scaleUp)
         scaleUp.setAutoRepeat(True)
 
-        loadModel = QPushButton(text="Load Model")
-        loadModel.clicked.connect(self.modifier.loadscene)
+        loadModel = QPushButton(text="Switch Model")
+        loadModel.clicked.connect(self.modifier.handlePickerPress)
 
         self.vLayout.addWidget(moveLeft)
         self.vLayout.addWidget(moveRight)
