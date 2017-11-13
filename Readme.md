@@ -1,4 +1,12 @@
-## 3-Sweep implementation in Python
+# 3-Sweep implementation in Python
+
+## RESULTS
+
+### 1.
+![vase generation](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/vase3/vase3_final.png)
+
+![vase output](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/vase3/vase3_final_results.png)
+
 - Install instructions:
     - Create Virtual env
     - `pip install requirements.txt`
