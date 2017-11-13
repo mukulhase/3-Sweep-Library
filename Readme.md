@@ -11,6 +11,10 @@
 ![alt text](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/tap/tap_final.png)
 ![alt text](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/tap/tap_final_result.png)
 
+### 3.
+![alt text](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/bottle2/bottle_final.png)
+![alt text](https://github.com/mukulhase/3-Sweep-Library/blob/master/results/bottle2/bottle_final_results.png)
+
 - Install instructions:
     - Create Virtual env
     - `pip install requirements.txt`
