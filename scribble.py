@@ -542,7 +542,7 @@ class MainWindow(QMainWindow):
         cameraEntity = view.camera()
 
         cameraEntity.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-        cameraEntity.setPosition(QVector3D(0.0, -30.0, -0.5))
+        cameraEntity.setPosition(QVector3D(0.0, -50.0, -0.5))
         cameraEntity.setUpVector(QVector3D(0.0, -1.0, 0.0))
         cameraEntity.setViewCenter(QVector3D(0.0, 0.0, 0.0))
 

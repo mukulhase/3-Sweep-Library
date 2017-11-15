@@ -137,7 +137,7 @@ class SceneModifier(QObject):
         self.obj.setScale(self.planeEntity.mesh().height() / background.height())
 
         coord = [(self.planeEntity.mesh().width() / background.width()) * coord[0], (self.planeEntity.mesh().height() / background.height()) * coord[1]]
-        self.obj.setPosition(QVector3D(float(coord[0]), -5.0, - float(coord[1])))
+        self.obj.setPosition(QVector3D(float(coord[0]), -1.0, - float(coord[1])))
 
         self.listOfObjects.append(self.obj)
         # picker = QObjectPicker(self.m_rootEntity)
