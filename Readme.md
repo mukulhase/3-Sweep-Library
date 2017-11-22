@@ -1,5 +1,7 @@
 # 3-Sweep implementation in Python
 
+![APP](https://user-images.githubusercontent.com/11690674/33120173-4924f98e-cf97-11e7-954d-d82514341581.png)
+
 ## RESULTS
 
 ### 1.
